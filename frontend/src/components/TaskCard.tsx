@@ -29,6 +29,17 @@ export function TaskCard({
         {task.storyTitle ? (
           <span className="story-chip" title={task.storyTitle}>{task.storyTitle}</span>
         ) : null}
+        {task.actionLabel === "todo" ? (
+          <span className="action-chip action-chip--todo">todo</span>
+        ) : task.actionLabel === "review" ? (
+          <span className="action-chip action-chip--review">review</span>
+        ) : null}
+        {task.hasMaxRetriesError ? (
+          <span className="retry-chip retry-chip--max">max retries</span>
+        ) : task.retryCount > 0 ? (
+          <span className="retry-chip">retry {task.retryCount}</span>
+        ) : null}
+        {task.isSubtask ? <span className="subtask-chip">subtask</span> : null}
       </div>
       <h3>{task.title}</h3>
       <p>{task.description}</p>

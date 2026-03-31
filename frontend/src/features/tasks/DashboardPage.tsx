@@ -53,6 +53,7 @@ export function DashboardPage({ onNavigate, searchQuery }: DashboardPageProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createDefaultStatus, setCreateDefaultStatus] = useState<BoardColumnId>("backlog");
   const [editingTask, setEditingTask] = useState<TaskApiRecord | null>(null);
+  const [editingTaskSubtasks, setEditingTaskSubtasks] = useState<TaskApiRecord[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -88,6 +89,15 @@ export function DashboardPage({ onNavigate, searchQuery }: DashboardPageProps) {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchTasks()
+        .then((records) => setTasks(records))
+        .catch(() => {});
+    }, 15_000);
+    return () => clearInterval(interval);
   }, []);
 
   const storiesMap = useMemo(
@@ -163,7 +173,10 @@ export function DashboardPage({ onNavigate, searchQuery }: DashboardPageProps) {
 
   const handleEditTask = (taskId: number) => {
     const task = tasks.find((t) => t.id === taskId);
-    if (task) setEditingTask(task);
+    if (task) {
+      setEditingTask(task);
+      setEditingTaskSubtasks(tasks.filter((t) => t.parent_task_id === task.id));
+    }
   };
 
   const handleDeleteTask = async (taskId: number) => {
@@ -267,7 +280,8 @@ export function DashboardPage({ onNavigate, searchQuery }: DashboardPageProps) {
         projects={projects}
         agents={agents}
         stories={stories}
-        onClose={() => setEditingTask(null)}
+        subtasks={editingTaskSubtasks}
+        onClose={() => { setEditingTask(null); setEditingTaskSubtasks([]); }}
         onUpdate={handleUpdateTask}
         onDelete={handleDeleteTask}
       />

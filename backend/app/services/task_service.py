@@ -62,6 +62,7 @@ def create_task(db: Session, payload: TaskCreate) -> TaskRead:
         owner_id=owner.id if owner else None,
         due_date=payload.due_date,
         story_id=payload.story_id,
+        parent_task_id=payload.parent_task_id,
     )
     created_task = repository.create(task=task, label_names=normalized_labels)
     return serialize_task(created_task)
@@ -94,6 +95,7 @@ def update_task(db: Session, task_id: int, payload: TaskUpdate) -> TaskRead:
         owner_id=owner.id if owner else None,
         label_names=normalized_labels,
         story_id=payload.story_id,
+        parent_task_id=payload.parent_task_id,
     )
     return serialize_task(updated_task)
 
@@ -119,6 +121,7 @@ def serialize_task(task) -> TaskRead:
         labels=[task_label.label.name for task_label in task.task_labels if task_label.label],
         due_date=task.due_date,
         story_id=task.story_id,
+        parent_task_id=task.parent_task_id,
         created_at=task.created_at,
         updated_at=task.updated_at,
     )

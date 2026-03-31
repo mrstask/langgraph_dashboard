@@ -208,7 +208,7 @@ export function TaskCreateModal({
             <label className="field">
               <span>Status</span>
               <select value={status} onChange={(event) => setStatus(event.target.value as BoardColumnId)}>
-                {["backlog", "ready", "running", "review", "done", "failed"].map((value) => (
+                {["backlog", "architect", "develop", "testing", "done", "failed", "ready", "running", "review"].map((value) => (
                   <option key={value} value={value}>
                     {value}
                   </option>

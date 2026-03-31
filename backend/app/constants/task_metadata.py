@@ -5,6 +5,9 @@ TASK_STATUSES = {
     4: "review",
     5: "done",
     6: "failed",
+    7: "architect",
+    8: "develop",
+    9: "testing",
 }
 
 TASK_PRIORITIES = {

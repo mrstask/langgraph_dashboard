@@ -18,6 +18,7 @@ class TaskRead(BaseModel):
     labels: list[str]
     due_date: datetime | None = None
     story_id: int | None = None
+    parent_task_id: int | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -40,6 +41,7 @@ class TaskCreate(BaseModel):
     labels: list[str] = Field(default_factory=list)
     due_date: datetime | None = None
     story_id: int | None = None
+    parent_task_id: int | None = None
 
 
 class TaskUpdate(BaseModel):
@@ -55,3 +57,4 @@ class TaskUpdate(BaseModel):
     labels: list[str] = Field(default_factory=list)
     due_date: datetime | None = None
     story_id: int | None = None
+    parent_task_id: int | None = None

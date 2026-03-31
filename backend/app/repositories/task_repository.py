@@ -75,6 +75,7 @@ class TaskRepository:
         owner_id: int | None,
         label_names: list[str],
         story_id: int | None,
+        parent_task_id: int | None = None,
     ) -> Task:
         task.title = title
         task.description = description
@@ -86,6 +87,7 @@ class TaskRepository:
         task.assigned_agent_id = assigned_agent_id
         task.owner_id = owner_id
         task.story_id = story_id
+        task.parent_task_id = parent_task_id
         task.task_labels.clear()
         self.db.flush()
         for label_name in label_names:

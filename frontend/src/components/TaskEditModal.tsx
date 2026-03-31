@@ -3,6 +3,15 @@ import { createPortal } from "react-dom";
 
 import type { BoardColumnId, TaskApiRecord } from "../lib/mockData";
 
+const STATUS_DOT_COLORS: Partial<Record<BoardColumnId, string>> = {
+  done: "var(--green)",
+  failed: "var(--red)",
+  develop: "var(--blue)",
+  testing: "var(--amber)",
+  architect: "var(--violet)",
+  running: "var(--violet)",
+};
+
 type ProjectOption = {
   id: number;
   key: string;
@@ -24,6 +33,7 @@ type TaskEditModalProps = {
   projects: ProjectOption[];
   agents: AgentOption[];
   stories: StoryOption[];
+  subtasks: TaskApiRecord[];
   onClose: () => void;
   onUpdate: (taskId: number, payload: TaskEditFormValue) => Promise<void>;
   onDelete: (taskId: number) => Promise<void>;
@@ -49,7 +59,7 @@ function toDatetimeLocal(iso: string | null): string {
   return iso.slice(0, 16);
 }
 
-export function TaskEditModal({ task, projects, agents, stories, onClose, onUpdate, onDelete }: TaskEditModalProps) {
+export function TaskEditModal({ task, projects, agents, stories, subtasks, onClose, onUpdate, onDelete }: TaskEditModalProps) {
   const [title, setTitle] = useState("");
   const [shortDescription, setShortDescription] = useState("");
   const [implementationDescription, setImplementationDescription] = useState("");
@@ -189,7 +199,7 @@ export function TaskEditModal({ task, projects, agents, stories, onClose, onUpda
             <label className="field">
               <span>Status</span>
               <select value={status} onChange={(e) => setStatus(e.target.value as BoardColumnId)}>
-                {["backlog", "ready", "running", "review", "done", "failed"].map((value) => (
+                {["backlog", "architect", "develop", "testing", "done", "failed", "ready", "running", "review"].map((value) => (
                   <option key={value} value={value}>
                     {value}
                   </option>
@@ -246,6 +256,25 @@ export function TaskEditModal({ task, projects, agents, stories, onClose, onUpda
             </button>
           </div>
         </form>
+
+        {subtasks.length > 0 ? (
+          <div className="subtask-section">
+            <h3 className="subtask-section__title">Subtasks ({subtasks.length})</h3>
+            <ul className="subtask-list">
+              {subtasks.map((sub) => (
+                <li key={sub.id} className="subtask-item">
+                  <span
+                    className="subtask-item__status-dot"
+                    style={{ background: STATUS_DOT_COLORS[sub.status] ?? "var(--muted)" }}
+                  />
+                  <span className="subtask-item__title">{sub.title}</span>
+                  <span className={`priority-chip priority-chip--${sub.priority}`}>{sub.priority}</span>
+                  <span className="subtask-item__status-label">{sub.status}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
         <div className="archive-card">
           <div className="archive-card__text">

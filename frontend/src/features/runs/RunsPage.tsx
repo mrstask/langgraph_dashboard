@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { TopBar } from "../../components/TopBar";
-import { fetchRuns, type RunRecord } from "../../lib/api";
+import { fetchAgents, fetchRuns, fetchTasks, type AgentRecord, type RunRecord } from "../../lib/api";
+import { RunDetailPanel } from "./RunDetailPanel";
 
 function formatDuration(started: string | null, finished: string | null): string {
   if (!started) return "—";
@@ -16,8 +17,7 @@ function formatDuration(started: string | null, finished: string | null): string
 
 function formatTime(iso: string | null): string {
   if (!iso) return "—";
-  const date = new Date(iso);
-  return date.toLocaleString(undefined, {
+  return new Date(iso).toLocaleString(undefined, {
     month: "short",
     day: "numeric",
     hour: "2-digit",
@@ -31,17 +31,26 @@ function RunStatusChip({ status }: { status: string }) {
 
 export function RunsPage() {
   const [runs, setRuns] = useState<RunRecord[]>([]);
+  const [agents, setAgents] = useState<AgentRecord[]>([]);
+  const [tasksMap, setTasksMap] = useState<Map<number, string>>(new Map());
+  const [selectedRun, setSelectedRun] = useState<RunRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadRuns() {
+    async function loadAll() {
       try {
-        const records = await fetchRuns();
+        const [runRecords, agentRecords, taskRecords] = await Promise.all([
+          fetchRuns(),
+          fetchAgents(),
+          fetchTasks(),
+        ]);
         if (!cancelled) {
-          setRuns(records);
+          setRuns(runRecords);
+          setAgents(agentRecords);
+          setTasksMap(new Map(taskRecords.map((t) => [t.id, t.title])));
           setError(null);
         }
       } catch (loadError) {
@@ -53,11 +62,22 @@ export function RunsPage() {
       }
     }
 
-    void loadRuns();
+    void loadAll();
     return () => {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchRuns()
+        .then((records) => setRuns(records))
+        .catch(() => {});
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const agentsMap = useMemo(() => new Map(agents.map((a) => [a.id, a.name])), [agents]);
 
   return (
     <section className="dashboard-content">
@@ -94,10 +114,18 @@ export function RunsPage() {
                 </tr>
               ) : (
                 runs.map((run) => (
-                  <tr key={run.id}>
+                  <tr
+                    key={run.id}
+                    className="data-table__row--clickable"
+                    onClick={() => setSelectedRun(run)}
+                  >
                     <td className="data-table__mono">{`RUN-${String(run.id).padStart(3, "0")}`}</td>
-                    <td className="data-table__mono">{`#${run.task_id}`}</td>
-                    <td className="data-table__mono">{`A${run.agent_id}`}</td>
+                    <td className="data-table__mono" title={tasksMap.get(run.task_id)}>
+                      {tasksMap.get(run.task_id) ?? `#${run.task_id}`}
+                    </td>
+                    <td className="data-table__mono">
+                      {run.agent_id != null ? (agentsMap.get(run.agent_id) ?? `A${run.agent_id}`) : "—"}
+                    </td>
                     <td>{run.pipeline_type}</td>
                     <td>
                       <RunStatusChip status={run.status} />
@@ -118,6 +146,15 @@ export function RunsPage() {
           </table>
         </div>
       )}
+
+      {selectedRun ? (
+        <RunDetailPanel
+          run={selectedRun}
+          agentsMap={agentsMap}
+          tasksMap={tasksMap}
+          onClose={() => setSelectedRun(null)}
+        />
+      ) : null}
     </section>
   );
 }

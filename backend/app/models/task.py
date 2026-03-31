@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import backref, relationship
 
 from app.db.base import Base
 from app.models.mixins import TimestampMixin
@@ -23,7 +23,9 @@ class Task(TimestampMixin, Base):
     due_date = Column(DateTime(timezone=True), nullable=True)
     story_id = Column(Integer, ForeignKey("stories.id"), nullable=True)
     definition_of_done = Column(Text(), nullable=True)
+    parent_task_id = Column(Integer, ForeignKey("tasks.id"), nullable=True)
 
     owner_ref = relationship("Owner")
     task_labels = relationship("TaskLabel", cascade="all, delete-orphan")
     story_ref = relationship("Story")
+    subtasks = relationship("Task", backref=backref("parent", remote_side="Task.id"))

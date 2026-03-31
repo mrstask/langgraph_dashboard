@@ -12,15 +12,18 @@ type StoriesPageProps = {
   onNavigate: (section: AppSection) => void;
 };
 
-const STATUS_ORDER: BoardColumnId[] = ["backlog", "ready", "running", "review", "done", "failed"];
+const STATUS_ORDER: BoardColumnId[] = ["backlog", "architect", "develop", "testing", "done", "failed", "ready", "running", "review"];
 
 const STATUS_COLORS: Record<BoardColumnId, string> = {
   backlog: "var(--slate)",
+  architect: "var(--violet)",
+  develop: "var(--blue)",
+  testing: "var(--amber)",
+  done: "var(--green)",
+  failed: "var(--red)",
   ready: "var(--blue)",
   running: "var(--violet)",
   review: "var(--amber)",
-  done: "var(--green)",
-  failed: "var(--red)",
 };
 
 function StatusBadge({ status }: { status: BoardColumnId }) {
@@ -285,6 +288,7 @@ export function StoriesPage({ onNavigate }: StoriesPageProps) {
         projects={projects}
         agents={agents}
         stories={stories}
+        subtasks={[]}
         onClose={() => setEditingTask(null)}
         onUpdate={handleUpdateTask}
         onDelete={handleDeleteTask}
