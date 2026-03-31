@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 import type { BoardColumnId, TaskApiRecord } from "../lib/mockData";
 
@@ -13,11 +14,17 @@ type AgentOption = {
   name: string;
 };
 
+type StoryOption = {
+  id: number;
+  title: string;
+};
+
 type TaskCreateModalProps = {
   isOpen: boolean;
   defaultStatus: BoardColumnId;
   projects: ProjectOption[];
   agents: AgentOption[];
+  stories: StoryOption[];
   onClose: () => void;
   onCreate: (payload: TaskCreateFormValue) => Promise<void>;
 };
@@ -25,6 +32,9 @@ type TaskCreateModalProps = {
 export type TaskCreateFormValue = {
   project_id: number;
   title: string;
+  short_description: string;
+  implementation_description: string;
+  definition_of_done: string;
   description: string;
   status: BoardColumnId;
   priority: TaskApiRecord["priority"];
@@ -32,6 +42,7 @@ export type TaskCreateFormValue = {
   human_owner: string;
   labels: string[];
   due_date: string | null;
+  story_id: number | null;
 };
 
 const defaultPriority: TaskApiRecord["priority"] = "medium";
@@ -41,11 +52,15 @@ export function TaskCreateModal({
   defaultStatus,
   projects,
   agents,
+  stories,
   onClose,
   onCreate,
 }: TaskCreateModalProps) {
   const [projectId, setProjectId] = useState<number>(projects[0]?.id ?? 1);
   const [title, setTitle] = useState("");
+  const [shortDescription, setShortDescription] = useState("");
+  const [implementationDescription, setImplementationDescription] = useState("");
+  const [definitionOfDone, setDefinitionOfDone] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<BoardColumnId>(defaultStatus);
   const [priority, setPriority] = useState<TaskApiRecord["priority"]>(defaultPriority);
@@ -53,6 +68,7 @@ export function TaskCreateModal({
   const [humanOwner, setHumanOwner] = useState("Stanislav");
   const [labels, setLabels] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [storyId, setStoryId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,6 +78,9 @@ export function TaskCreateModal({
     }
     setProjectId(projects[0]?.id ?? 1);
     setTitle("");
+    setShortDescription("");
+    setImplementationDescription("");
+    setDefinitionOfDone("");
     setDescription("");
     setStatus(defaultStatus);
     setPriority(defaultPriority);
@@ -69,6 +88,7 @@ export function TaskCreateModal({
     setHumanOwner("Stanislav");
     setLabels("");
     setDueDate("");
+    setStoryId("");
     setError(null);
     setIsSubmitting(false);
   }, [defaultStatus, isOpen, projects]);
@@ -77,7 +97,7 @@ export function TaskCreateModal({
     return null;
   }
 
-  return (
+  return createPortal(
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="create-task-title">
       <div className="modal-card">
         <div className="modal-header">
@@ -104,6 +124,9 @@ export function TaskCreateModal({
               await onCreate({
                 project_id: projectId,
                 title: title.trim(),
+                short_description: shortDescription.trim(),
+                implementation_description: implementationDescription.trim(),
+                definition_of_done: definitionOfDone.trim(),
                 description: description.trim(),
                 status,
                 priority,
@@ -114,6 +137,7 @@ export function TaskCreateModal({
                   .map((label) => label.trim())
                   .filter(Boolean),
                 due_date: dueDate || null,
+                story_id: storyId ? Number(storyId) : null,
               });
             } catch (submitError) {
               setError(submitError instanceof Error ? submitError.message : "Failed to create task");
@@ -128,16 +152,48 @@ export function TaskCreateModal({
           </label>
 
           <label className="field">
-            <span>Description</span>
+            <span>Short Description <span className="field__hint">(shown on board card)</span></span>
             <textarea
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="Add task details"
-              rows={4}
+              value={shortDescription}
+              onChange={(event) => setShortDescription(event.target.value)}
+              placeholder="Brief summary visible on the Kanban card"
+              rows={3}
+            />
+          </label>
+
+          <label className="field">
+            <span>Implementation Description <span className="field__hint">(detailed notes)</span></span>
+            <textarea
+              value={implementationDescription}
+              onChange={(event) => setImplementationDescription(event.target.value)}
+              placeholder="Technical details, steps, acceptance criteria"
+              rows={5}
+            />
+          </label>
+
+          <label className="field">
+            <span>Definition of Done</span>
+            <textarea
+              value={definitionOfDone}
+              onChange={(event) => setDefinitionOfDone(event.target.value)}
+              placeholder="Criteria that must be met for this task to be considered complete"
+              rows={3}
             />
           </label>
 
           <div className="field-grid">
+            <label className="field">
+              <span>Story</span>
+              <select value={storyId} onChange={(event) => setStoryId(event.target.value)}>
+                <option value="">No story</option>
+                {stories.map((story) => (
+                  <option key={story.id} value={story.id}>
+                    {story.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+
             <label className="field">
               <span>Project</span>
               <select value={projectId} onChange={(event) => setProjectId(Number(event.target.value))}>
@@ -215,6 +271,7 @@ export function TaskCreateModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

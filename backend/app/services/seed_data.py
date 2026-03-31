@@ -231,6 +231,9 @@ def move_seeded_task(task_id: int, status: str) -> TaskRead:
 
 
 def seed_database(db: Session) -> None:
+    if db.query(Project).count() > 0:
+        return
+
     owner_names = sorted({task.human_owner for task in _TASKS if task.human_owner})
     for index, owner_name in enumerate(owner_names, start=1):
         db.merge(Owner(id=index, name=owner_name))

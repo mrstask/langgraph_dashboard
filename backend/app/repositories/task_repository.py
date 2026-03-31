@@ -50,12 +50,51 @@ class TaskRepository:
             self.db.flush()
         return label
 
+    def delete(self, task: Task) -> None:
+        self.db.delete(task)
+        self.db.commit()
+
     def update_status(self, task: Task, status: str) -> Task:
         task.status = status
         self.db.add(task)
         self.db.commit()
         self.db.refresh(task)
         return task
+
+    def update(
+        self,
+        task: Task,
+        title: str,
+        description: str | None,
+        short_description: str | None,
+        implementation_description: str | None,
+        definition_of_done: str | None,
+        status: int,
+        priority: int,
+        assigned_agent_id: int | None,
+        owner_id: int | None,
+        label_names: list[str],
+        story_id: int | None,
+    ) -> Task:
+        task.title = title
+        task.description = description
+        task.short_description = short_description
+        task.implementation_description = implementation_description
+        task.definition_of_done = definition_of_done
+        task.status = status
+        task.priority = priority
+        task.assigned_agent_id = assigned_agent_id
+        task.owner_id = owner_id
+        task.story_id = story_id
+        task.task_labels.clear()
+        self.db.flush()
+        for label_name in label_names:
+            label = self.get_or_create_label(label_name)
+            task.task_labels.append(TaskLabel(label_id=label.id))
+        self.db.add(task)
+        self.db.commit()
+        self.db.refresh(task)
+        return self.get_by_id(task.id) or task
 
     def create(self, task: Task, label_names: list[str]) -> Task:
         self.db.add(task)

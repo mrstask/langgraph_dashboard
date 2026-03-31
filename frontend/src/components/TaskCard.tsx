@@ -5,6 +5,7 @@ type TaskCardProps = {
   isDragging?: boolean;
   onDragStart?: (taskId: number) => void;
   onDragEnd?: () => void;
+  onClick?: (taskId: number) => void;
 };
 
 export function TaskCard({
@@ -12,6 +13,7 @@ export function TaskCard({
   isDragging = false,
   onDragStart,
   onDragEnd,
+  onClick,
 }: TaskCardProps) {
   return (
     <article
@@ -19,8 +21,15 @@ export function TaskCard({
       draggable
       onDragStart={() => onDragStart?.(task.id)}
       onDragEnd={onDragEnd}
+      onClick={() => onClick?.(task.id)}
+      style={{ cursor: onClick ? "pointer" : undefined }}
     >
-      <span className={`priority-chip priority-chip--${task.priority}`}>{task.priority}</span>
+      <div className="task-card__chips">
+        <span className={`priority-chip priority-chip--${task.priority}`}>{task.priority}</span>
+        {task.storyTitle ? (
+          <span className="story-chip" title={task.storyTitle}>{task.storyTitle}</span>
+        ) : null}
+      </div>
       <h3>{task.title}</h3>
       <p>{task.description}</p>
       <div className="task-meta">

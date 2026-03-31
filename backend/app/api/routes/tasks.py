@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
-from app.schemas.task import TaskCreate, TaskRead, TaskStatusMove
-from app.services.task_service import create_task, list_tasks, move_task
+from app.schemas.task import TaskCreate, TaskRead, TaskStatusMove, TaskUpdate
+from app.services.task_service import create_task, delete_task, list_tasks, move_task, update_task
 
 router = APIRouter()
 
@@ -28,3 +28,18 @@ def move_task_route(
     db: Session = Depends(get_db),
 ) -> TaskRead:
     return move_task(db=db, task_id=task_id, status=payload.status)
+
+
+@router.patch("/{task_id}", response_model=TaskRead)
+def update_task_route(
+    task_id: int,
+    payload: TaskUpdate,
+    db: Session = Depends(get_db),
+) -> TaskRead:
+    return update_task(db=db, task_id=task_id, payload=payload)
+
+
+@router.delete("/{task_id}", status_code=204)
+def delete_task_route(task_id: int, db: Session = Depends(get_db)) -> Response:
+    delete_task(db=db, task_id=task_id)
+    return Response(status_code=204)

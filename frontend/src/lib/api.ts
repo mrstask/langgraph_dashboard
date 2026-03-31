@@ -37,16 +37,48 @@ export type RunRecord = {
   logs_text: string | null;
 };
 
+export type StoryRecord = {
+  id: number;
+  title: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type StoryCreatePayload = {
+  title: string;
+  description: string;
+};
+
 export type TaskCreatePayload = {
   project_id: number;
   title: string;
   description: string;
+  short_description: string;
+  implementation_description: string;
+  definition_of_done: string;
   status: BoardColumnId;
   priority: "low" | "medium" | "high" | "critical";
   assigned_agent_id: number | null;
   human_owner: string;
   labels: string[];
   due_date: string | null;
+  story_id: number | null;
+};
+
+export type TaskUpdatePayload = {
+  title: string;
+  description: string;
+  short_description: string;
+  implementation_description: string;
+  definition_of_done: string;
+  status: BoardColumnId;
+  priority: "low" | "medium" | "high" | "critical";
+  assigned_agent_id: number | null;
+  human_owner: string;
+  labels: string[];
+  due_date: string | null;
+  story_id: number | null;
 };
 
 export type AgentCreatePayload = {
@@ -105,6 +137,22 @@ export async function createTask(payload: TaskCreatePayload): Promise<TaskApiRec
   return response.json();
 }
 
+export async function updateTask(taskId: number, payload: TaskUpdatePayload): Promise<TaskApiRecord> {
+  const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update task");
+  }
+
+  return response.json();
+}
+
 export async function fetchProjects(): Promise<ProjectRecord[]> {
   const response = await fetch(`${API_BASE_URL}/projects`);
   if (!response.ok) {
@@ -150,6 +198,63 @@ export async function createProject(payload: ProjectCreatePayload): Promise<Proj
     throw new Error("Failed to create project");
   }
 
+  return response.json();
+}
+
+export type CountsRecord = {
+  tasks: number;
+  agents: number;
+  runs: number;
+  projects: number;
+  stories: number;
+};
+
+export async function deleteTask(taskId: number): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    throw new Error("Failed to delete task");
+  }
+}
+
+export async function fetchStories(): Promise<StoryRecord[]> {
+  const response = await fetch(`${API_BASE_URL}/stories`);
+  if (!response.ok) {
+    throw new Error("Failed to load stories");
+  }
+  return response.json();
+}
+
+export async function updateStory(storyId: number, payload: StoryCreatePayload): Promise<StoryRecord> {
+  const response = await fetch(`${API_BASE_URL}/stories/${storyId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error("Failed to update story");
+  }
+  return response.json();
+}
+
+export async function createStory(payload: StoryCreatePayload): Promise<StoryRecord> {
+  const response = await fetch(`${API_BASE_URL}/stories`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error("Failed to create story");
+  }
+  return response.json();
+}
+
+export async function fetchCounts(): Promise<CountsRecord> {
+  const response = await fetch(`${API_BASE_URL}/counts`);
+  if (!response.ok) {
+    throw new Error("Failed to load counts");
+  }
   return response.json();
 }
 

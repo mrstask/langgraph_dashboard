@@ -1,20 +1,18 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
+from app.api.deps import get_db
 from app.schemas.run import RunRead
-from app.services.seed_data import seeded_runs
+from app.services.run_service import get_run, list_runs
 
 router = APIRouter()
 
 
 @router.get("", response_model=list[RunRead])
-def list_runs() -> list[RunRead]:
-    return seeded_runs()
+def list_runs_route(db: Session = Depends(get_db)) -> list[RunRead]:
+    return list_runs(db)
 
 
 @router.get("/{run_id}", response_model=RunRead)
-def get_run(run_id: int) -> RunRead:
-    run = next((candidate for candidate in seeded_runs() if candidate.id == run_id), None)
-    if run is None:
-        raise HTTPException(status_code=404, detail="Run not found")
-    return run
-
+def get_run_route(run_id: int, db: Session = Depends(get_db)) -> RunRead:
+    return get_run(db, run_id)

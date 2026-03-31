@@ -7,6 +7,7 @@ export type DashboardTask = {
   updatedAt: string;
   agentInitials: string;
   ownerInitials: string;
+  storyTitle: string | null;
 };
 
 export type BoardColumnId = "backlog" | "ready" | "running" | "review" | "done" | "failed";
@@ -23,12 +24,16 @@ export type TaskApiRecord = {
   project_id: number;
   title: string;
   description: string | null;
+  short_description: string | null;
+  implementation_description: string | null;
+  definition_of_done: string | null;
   status: BoardColumnId;
   priority: "critical" | "high" | "medium" | "low";
   assigned_agent_id: number | null;
   human_owner: string | null;
   labels: string[];
   due_date: string | null;
+  story_id: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -42,7 +47,10 @@ const boardTemplate: Array<Omit<BoardColumnData, "tasks">> = [
   { id: "failed", title: "Failed", tone: "red" },
 ];
 
-export function buildBoardColumns(tasks: TaskApiRecord[]): BoardColumnData[] {
+export function buildBoardColumns(
+  tasks: TaskApiRecord[],
+  storiesMap: Map<number, string> = new Map(),
+): BoardColumnData[] {
   return boardTemplate.map((column) => ({
     ...column,
     tasks: tasks
@@ -50,12 +58,13 @@ export function buildBoardColumns(tasks: TaskApiRecord[]): BoardColumnData[] {
       .map((task) => ({
         id: task.id,
         title: task.title,
-        description: task.description ?? "No description provided yet.",
+        description: task.short_description ?? task.description ?? "",
         priority: task.priority,
         runStatus: deriveRunStatus(task.status),
         updatedAt: formatRelativeTime(task.updated_at),
         agentInitials: buildAgentInitials(task.assigned_agent_id),
         ownerInitials: buildOwnerInitials(task.human_owner),
+        storyTitle: task.story_id != null ? (storiesMap.get(task.story_id) ?? null) : null,
       })),
   }));
 }

@@ -1,31 +1,43 @@
 import type { AppSection } from "../app/App";
 
-const navItems: Array<{ label: string; value: AppSection; count?: number }> = [
-  { label: "Dashboard", value: "dashboard", count: 12 },
-  { label: "Tasks", value: "tasks", count: 34 },
-  { label: "Agents", value: "agents", count: 5 },
-  { label: "Runs", value: "runs", count: 9 },
-  { label: "Projects", value: "projects", count: 2 },
-  { label: "Settings", value: "settings" },
-];
+type SidebarCounts = {
+  tasks: number | null;
+  agents: number | null;
+  runs: number | null;
+  projects: number | null;
+  stories: number | null;
+};
 
 type SidebarProps = {
   activeSection: AppSection;
   searchQuery: string;
   isCollapsed: boolean;
+  counts?: SidebarCounts;
   onNavigate: (section: AppSection) => void;
   onSearchChange: (value: string) => void;
   onToggleCollapse: () => void;
 };
 
+const emptyCounts = { tasks: null, agents: null, runs: null, projects: null, stories: null };
+
 export function Sidebar({
   activeSection,
   searchQuery,
   isCollapsed,
+  counts = emptyCounts,
   onNavigate,
   onSearchChange,
   onToggleCollapse,
 }: SidebarProps) {
+  const navItems: Array<{ label: string; value: AppSection; count?: number | null }> = [
+    { label: "Dashboard", value: "dashboard", count: counts.tasks },
+    { label: "Tasks", value: "tasks", count: counts.tasks },
+    { label: "Stories", value: "stories", count: counts.stories },
+    { label: "Agents", value: "agents", count: counts.agents },
+    { label: "Runs", value: "runs", count: counts.runs },
+    { label: "Projects", value: "projects", count: counts.projects },
+    { label: "Settings", value: "settings" },
+  ];
   return (
     <aside className={`sidebar${isCollapsed ? " sidebar--collapsed" : ""}`}>
       <button
@@ -74,7 +86,9 @@ export function Sidebar({
               title={isCollapsed ? item.label : undefined}
             >
               {isCollapsed ? <span className="sidebar-nav__glyph">{item.label[0]}</span> : <span>{item.label}</span>}
-              {!isCollapsed && item.count ? <span className="nav-count">{item.count}</span> : null}
+              {!isCollapsed && item.count !== undefined ? (
+                <span className="nav-count">{item.count ?? "—"}</span>
+              ) : null}
             </button>
           ))}
         </nav>
