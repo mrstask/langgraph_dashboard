@@ -1,0 +1,11 @@
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th, .data-table td { padding: 14px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+.data-table th { color: var(--muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table__mono { font-family: ui-monospace, "SF Mono", monospace; font-size: 0.82rem; color: var(--muted); }
+.data-table__muted { color: var(--muted); font-size: 0.88rem; }
+.data-table__summary { max-width: 260px; font-size: 0.88rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.data-table__error { color: #b32929; }
+.data-table__empty { text-align: center; color: var(--muted); padding: 40px 0; font-size: 0.92rem; }
+.data-table__row--clickable { cursor: pointer; transition: background 0.12s ease; }
+.data-table__row--clickable:hover td { background: rgba(98, 72, 245, 0.04); }

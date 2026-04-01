@@ -5,31 +5,12 @@ import { InfoPanel } from "../../components/InfoPanel";
 import { TopBar } from "../../components/TopBar";
 import { fetchTasks } from "../../lib/api";
 import { type TaskApiRecord } from "../../lib/mockData";
+import { matchesTaskSearch } from "../../lib/search";
 
 type TasksPageProps = {
   onNavigate: (section: AppSection) => void;
   searchQuery: string;
 };
-
-function matchesTaskSearch(task: TaskApiRecord, normalizedQuery: string) {
-  if (!normalizedQuery) {
-    return true;
-  }
-
-  const haystack = [
-    task.title,
-    task.description ?? "",
-    task.status,
-    task.priority,
-    task.human_owner ?? "",
-    ...task.labels,
-    task.assigned_agent_id ? `agent ${task.assigned_agent_id}` : "",
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  return haystack.includes(normalizedQuery);
-}
 
 export function TasksPage({ onNavigate, searchQuery }: TasksPageProps) {
   const [tasks, setTasks] = useState<TaskApiRecord[]>([]);

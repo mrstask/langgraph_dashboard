@@ -6,6 +6,7 @@ type TaskCardProps = {
   onDragStart?: (taskId: number) => void;
   onDragEnd?: () => void;
   onClick?: (taskId: number) => void;
+  onKeyboardMove?: (taskId: number, direction: "left" | "right") => void;
 };
 
 export function TaskCard({
@@ -14,14 +15,35 @@ export function TaskCard({
   onDragStart,
   onDragEnd,
   onClick,
+  onKeyboardMove,
 }: TaskCardProps) {
   return (
     <article
       className={`task-card ${isDragging ? "task-card--dragging" : ""}`}
       draggable
+      tabIndex={0}
+      role="button"
+      aria-roledescription="draggable task"
+      aria-label={`${task.title}, ${task.priority} priority. Use Ctrl+Left or Ctrl+Right to move between columns.`}
       onDragStart={() => onDragStart?.(task.id)}
       onDragEnd={onDragEnd}
       onClick={() => onClick?.(task.id)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          if (!e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            onClick?.(task.id);
+          }
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === "ArrowLeft") {
+          e.preventDefault();
+          onKeyboardMove?.(task.id, "left");
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === "ArrowRight") {
+          e.preventDefault();
+          onKeyboardMove?.(task.id, "right");
+        }
+      }}
       style={{ cursor: onClick ? "pointer" : undefined }}
     >
       <div className="task-card__chips">

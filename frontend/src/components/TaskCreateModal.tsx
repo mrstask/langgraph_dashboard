@@ -1,23 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useReducer } from "react";
 import { createPortal } from "react-dom";
 
 import type { BoardColumnId, TaskApiRecord } from "../lib/mockData";
 
-type ProjectOption = {
-  id: number;
-  key: string;
-  name: string;
-};
-
-type AgentOption = {
-  id: number;
-  name: string;
-};
-
-type StoryOption = {
-  id: number;
-  title: string;
-};
+type ProjectOption = { id: number; key: string; name: string };
+type AgentOption = { id: number; name: string };
+type StoryOption = { id: number; title: string };
 
 type TaskCreateModalProps = {
   isOpen: boolean;
@@ -45,7 +33,52 @@ export type TaskCreateFormValue = {
   story_id: number | null;
 };
 
-const defaultPriority: TaskApiRecord["priority"] = "medium";
+type FormState = {
+  projectId: number;
+  title: string;
+  shortDescription: string;
+  implementationDescription: string;
+  definitionOfDone: string;
+  description: string;
+  status: BoardColumnId;
+  priority: TaskApiRecord["priority"];
+  assignedAgentId: string;
+  humanOwner: string;
+  labels: string;
+  dueDate: string;
+  storyId: string;
+  isSubmitting: boolean;
+  error: string | null;
+};
+
+type FormAction =
+  | { type: "SET_FIELD"; field: keyof FormState; value: string | number | boolean | null }
+  | { type: "RESET"; defaultProjectId: number; defaultStatus: BoardColumnId };
+
+function formReducer(state: FormState, action: FormAction): FormState {
+  switch (action.type) {
+    case "SET_FIELD":
+      return { ...state, [action.field]: action.value };
+    case "RESET":
+      return {
+        projectId: action.defaultProjectId,
+        title: "",
+        shortDescription: "",
+        implementationDescription: "",
+        definitionOfDone: "",
+        description: "",
+        status: action.defaultStatus,
+        priority: "medium",
+        assignedAgentId: "",
+        humanOwner: "Stanislav",
+        labels: "",
+        dueDate: "",
+        storyId: "",
+        isSubmitting: false,
+        error: null,
+      };
+  }
+}
 
 export function TaskCreateModal({
   isOpen,
@@ -56,46 +89,34 @@ export function TaskCreateModal({
   onClose,
   onCreate,
 }: TaskCreateModalProps) {
-  const [projectId, setProjectId] = useState<number>(projects[0]?.id ?? 1);
-  const [title, setTitle] = useState("");
-  const [shortDescription, setShortDescription] = useState("");
-  const [implementationDescription, setImplementationDescription] = useState("");
-  const [definitionOfDone, setDefinitionOfDone] = useState("");
-  const [description, setDescription] = useState("");
-  const [status, setStatus] = useState<BoardColumnId>(defaultStatus);
-  const [priority, setPriority] = useState<TaskApiRecord["priority"]>(defaultPriority);
-  const [assignedAgentId, setAssignedAgentId] = useState<string>("");
-  const [humanOwner, setHumanOwner] = useState("Stanislav");
-  const [labels, setLabels] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [storyId, setStoryId] = useState<string>("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [form, dispatch] = useReducer(formReducer, {
+    projectId: projects[0]?.id ?? 1,
+    title: "",
+    shortDescription: "",
+    implementationDescription: "",
+    definitionOfDone: "",
+    description: "",
+    status: defaultStatus,
+    priority: "medium",
+    assignedAgentId: "",
+    humanOwner: "Stanislav",
+    labels: "",
+    dueDate: "",
+    storyId: "",
+    isSubmitting: false,
+    error: null,
+  });
 
   useEffect(() => {
-    if (!isOpen) {
-      return;
+    if (isOpen) {
+      dispatch({ type: "RESET", defaultProjectId: projects[0]?.id ?? 1, defaultStatus });
     }
-    setProjectId(projects[0]?.id ?? 1);
-    setTitle("");
-    setShortDescription("");
-    setImplementationDescription("");
-    setDefinitionOfDone("");
-    setDescription("");
-    setStatus(defaultStatus);
-    setPriority(defaultPriority);
-    setAssignedAgentId("");
-    setHumanOwner("Stanislav");
-    setLabels("");
-    setDueDate("");
-    setStoryId("");
-    setError(null);
-    setIsSubmitting(false);
   }, [defaultStatus, isOpen, projects]);
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
+
+  const set = (field: keyof FormState, value: string | number | boolean | null) =>
+    dispatch({ type: "SET_FIELD", field, value });
 
   return createPortal(
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="create-task-title">
@@ -114,104 +135,80 @@ export function TaskCreateModal({
           className="modal-form"
           onSubmit={async (event) => {
             event.preventDefault();
-            if (!title.trim()) {
-              setError("Title is required.");
+            if (!form.title.trim()) {
+              set("error", "Title is required.");
               return;
             }
-            setIsSubmitting(true);
-            setError(null);
+            set("isSubmitting", true);
+            set("error", null);
             try {
               await onCreate({
-                project_id: projectId,
-                title: title.trim(),
-                short_description: shortDescription.trim(),
-                implementation_description: implementationDescription.trim(),
-                definition_of_done: definitionOfDone.trim(),
-                description: description.trim(),
-                status,
-                priority,
-                assigned_agent_id: assignedAgentId ? Number(assignedAgentId) : null,
-                human_owner: humanOwner.trim(),
-                labels: labels
-                  .split(",")
-                  .map((label) => label.trim())
-                  .filter(Boolean),
-                due_date: dueDate || null,
-                story_id: storyId ? Number(storyId) : null,
+                project_id: form.projectId,
+                title: form.title.trim(),
+                short_description: form.shortDescription.trim(),
+                implementation_description: form.implementationDescription.trim(),
+                definition_of_done: form.definitionOfDone.trim(),
+                description: form.description.trim(),
+                status: form.status,
+                priority: form.priority,
+                assigned_agent_id: form.assignedAgentId ? Number(form.assignedAgentId) : null,
+                human_owner: form.humanOwner.trim(),
+                labels: form.labels.split(",").map((l) => l.trim()).filter(Boolean),
+                due_date: form.dueDate || null,
+                story_id: form.storyId ? Number(form.storyId) : null,
               });
             } catch (submitError) {
-              setError(submitError instanceof Error ? submitError.message : "Failed to create task");
+              set("error", submitError instanceof Error ? submitError.message : "Failed to create task");
             } finally {
-              setIsSubmitting(false);
+              set("isSubmitting", false);
             }
           }}
         >
           <label className="field">
             <span>Title</span>
-            <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Write task title" />
+            <input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Write task title" />
           </label>
 
           <label className="field">
             <span>Short Description <span className="field__hint">(shown on board card)</span></span>
-            <textarea
-              value={shortDescription}
-              onChange={(event) => setShortDescription(event.target.value)}
-              placeholder="Brief summary visible on the Kanban card"
-              rows={3}
-            />
+            <textarea value={form.shortDescription} onChange={(e) => set("shortDescription", e.target.value)} placeholder="Brief summary visible on the Kanban card" rows={3} />
           </label>
 
           <label className="field">
             <span>Implementation Description <span className="field__hint">(detailed notes)</span></span>
-            <textarea
-              value={implementationDescription}
-              onChange={(event) => setImplementationDescription(event.target.value)}
-              placeholder="Technical details, steps, acceptance criteria"
-              rows={5}
-            />
+            <textarea value={form.implementationDescription} onChange={(e) => set("implementationDescription", e.target.value)} placeholder="Technical details, steps, acceptance criteria" rows={5} />
           </label>
 
           <label className="field">
             <span>Definition of Done</span>
-            <textarea
-              value={definitionOfDone}
-              onChange={(event) => setDefinitionOfDone(event.target.value)}
-              placeholder="Criteria that must be met for this task to be considered complete"
-              rows={3}
-            />
+            <textarea value={form.definitionOfDone} onChange={(e) => set("definitionOfDone", e.target.value)} placeholder="Criteria that must be met for this task to be considered complete" rows={3} />
           </label>
 
           <div className="field-grid">
             <label className="field">
               <span>Story</span>
-              <select value={storyId} onChange={(event) => setStoryId(event.target.value)}>
+              <select value={form.storyId} onChange={(e) => set("storyId", e.target.value)}>
                 <option value="">No story</option>
                 {stories.map((story) => (
-                  <option key={story.id} value={story.id}>
-                    {story.title}
-                  </option>
+                  <option key={story.id} value={story.id}>{story.title}</option>
                 ))}
               </select>
             </label>
 
             <label className="field">
               <span>Project</span>
-              <select value={projectId} onChange={(event) => setProjectId(Number(event.target.value))}>
+              <select value={form.projectId} onChange={(e) => set("projectId", Number(e.target.value))}>
                 {projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.key} · {project.name}
-                  </option>
+                  <option key={project.id} value={project.id}>{project.key} · {project.name}</option>
                 ))}
               </select>
             </label>
 
             <label className="field">
               <span>Status</span>
-              <select value={status} onChange={(event) => setStatus(event.target.value as BoardColumnId)}>
-                {["backlog", "architect", "develop", "testing", "done", "failed", "ready", "running", "review"].map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
+              <select value={form.status} onChange={(e) => set("status", e.target.value)}>
+                {["backlog", "architect", "develop", "testing", "done", "failed", "ready", "running", "review"].map((v) => (
+                  <option key={v} value={v}>{v}</option>
                 ))}
               </select>
             </label>
@@ -220,23 +217,19 @@ export function TaskCreateModal({
           <div className="field-grid">
             <label className="field">
               <span>Priority</span>
-              <select value={priority} onChange={(event) => setPriority(event.target.value as TaskApiRecord["priority"])}>
-                {["low", "medium", "high", "critical"].map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
+              <select value={form.priority} onChange={(e) => set("priority", e.target.value)}>
+                {["low", "medium", "high", "critical"].map((v) => (
+                  <option key={v} value={v}>{v}</option>
                 ))}
               </select>
             </label>
 
             <label className="field">
               <span>Assigned Agent</span>
-              <select value={assignedAgentId} onChange={(event) => setAssignedAgentId(event.target.value)}>
+              <select value={form.assignedAgentId} onChange={(e) => set("assignedAgentId", e.target.value)}>
                 <option value="">Unassigned</option>
                 {agents.map((agent) => (
-                  <option key={agent.id} value={agent.id}>
-                    {agent.name}
-                  </option>
+                  <option key={agent.id} value={agent.id}>{agent.name}</option>
                 ))}
               </select>
             </label>
@@ -245,28 +238,26 @@ export function TaskCreateModal({
           <div className="field-grid">
             <label className="field">
               <span>Owner</span>
-              <input value={humanOwner} onChange={(event) => setHumanOwner(event.target.value)} />
+              <input value={form.humanOwner} onChange={(e) => set("humanOwner", e.target.value)} />
             </label>
 
             <label className="field">
               <span>Due Date</span>
-              <input type="datetime-local" value={dueDate} onChange={(event) => setDueDate(event.target.value)} />
+              <input type="datetime-local" value={form.dueDate} onChange={(e) => set("dueDate", e.target.value)} />
             </label>
           </div>
 
           <label className="field">
             <span>Labels</span>
-            <input value={labels} onChange={(event) => setLabels(event.target.value)} placeholder="ui, backend" />
+            <input value={form.labels} onChange={(e) => set("labels", e.target.value)} placeholder="ui, backend" />
           </label>
 
-          {error ? <div className="status-banner status-banner--error">{error}</div> : null}
+          {form.error ? <div className="status-banner status-banner--error">{form.error}</div> : null}
 
           <div className="modal-actions">
-            <button type="button" className="secondary-button" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="submit" className="primary-button" disabled={isSubmitting}>
-              {isSubmitting ? "Creating..." : "Create Task"}
+            <button type="button" className="secondary-button" onClick={onClose}>Cancel</button>
+            <button type="submit" className="primary-button" disabled={form.isSubmitting}>
+              {form.isSubmitting ? "Creating..." : "Create Task"}
             </button>
           </div>
         </form>

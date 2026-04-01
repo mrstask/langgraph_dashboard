@@ -74,49 +74,51 @@ function StoryPanel({ story, tasks, defaultOpen, onClickTask, onEditStory }: Sto
 
   return (
     <div className={`story-panel${isOpen ? " story-panel--open" : ""}`}>
-      <button
-        type="button"
-        className="story-panel__header"
-        onClick={() => setIsOpen((v) => !v)}
-        aria-expanded={isOpen}
-      >
-        <div className="story-panel__header-left">
-          <span className="story-panel__chevron">{isOpen ? "▾" : "▸"}</span>
-          <div>
-            <span className="story-panel__title">
-              {story ? story.title : "Unassigned"}
-            </span>
-            {story?.description ? (
-              <span className="story-panel__desc">{story.description}</span>
-            ) : null}
-          </div>
-        </div>
-        <div className="story-panel__header-right">
-          {STATUS_ORDER.map((status) =>
-            countsByStatus[status] ? (
-              <span
-                key={status}
-                className="story-status-count"
-                style={{ background: `${STATUS_COLORS[status]}22`, color: STATUS_COLORS[status] }}
-                title={`${countsByStatus[status]} ${status}`}
-              >
-                {countsByStatus[status]} {status}
+      <div className="story-panel__header-row">
+        <button
+          type="button"
+          className="story-panel__header"
+          onClick={() => setIsOpen((v) => !v)}
+          aria-expanded={isOpen}
+        >
+          <div className="story-panel__header-left">
+            <span className="story-panel__chevron">{isOpen ? "▾" : "▸"}</span>
+            <div>
+              <span className="story-panel__title">
+                {story ? story.title : "Unassigned"}
               </span>
-            ) : null,
-          )}
-          <span className="story-panel__total">{tasks.length} task{tasks.length !== 1 ? "s" : ""}</span>
-          {story && onEditStory ? (
-            <button
-              type="button"
-              className="story-edit-btn"
-              title="Edit story"
-              onClick={(e) => { e.stopPropagation(); onEditStory(story); }}
-            >
-              ✎
-            </button>
-          ) : null}
-        </div>
-      </button>
+              {story?.description ? (
+                <span className="story-panel__desc">{story.description}</span>
+              ) : null}
+            </div>
+          </div>
+          <div className="story-panel__header-right">
+            {STATUS_ORDER.map((status) =>
+              countsByStatus[status] ? (
+                <span
+                  key={status}
+                  className="story-status-count"
+                  style={{ background: `${STATUS_COLORS[status]}22`, color: STATUS_COLORS[status] }}
+                  title={`${countsByStatus[status]} ${status}`}
+                >
+                  {countsByStatus[status]} {status}
+                </span>
+              ) : null,
+            )}
+            <span className="story-panel__total">{tasks.length} task{tasks.length !== 1 ? "s" : ""}</span>
+          </div>
+        </button>
+        {story && onEditStory ? (
+          <button
+            type="button"
+            className="story-edit-btn"
+            title="Edit story"
+            onClick={() => onEditStory(story)}
+          >
+            ✎
+          </button>
+        ) : null}
+      </div>
 
       {isOpen ? (
         <div className="story-panel__body">

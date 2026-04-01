@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 type AgentCreateModalProps = {
   isOpen: boolean;
@@ -43,7 +44,7 @@ export function AgentCreateModal({ isOpen, onClose, onCreate }: AgentCreateModal
     return null;
   }
 
-  return (
+  return createPortal(
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="create-agent-title">
       <div className="modal-card">
         <div className="modal-header">
@@ -152,6 +153,7 @@ export function AgentCreateModal({ isOpen, onClose, onCreate }: AgentCreateModal
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

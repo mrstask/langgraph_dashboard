@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 
 import { Sidebar } from "../components/Sidebar";
 import { fetchCounts } from "../lib/api";
+import { useTheme } from "../lib/useTheme";
 import { AgentsPage } from "../features/agents/AgentsPage";
 import { ProjectsPage } from "../features/projects/ProjectsPage";
 import { RunsPage } from "../features/runs/RunsPage";
@@ -12,28 +14,22 @@ import { SettingsPage } from "../features/settings/SettingsPage";
 
 export type AppSection = "dashboard" | "tasks" | "stories" | "agents" | "runs" | "projects" | "settings";
 
-const defaultSection: AppSection = "dashboard";
+const SECTIONS: AppSection[] = ["dashboard", "tasks", "stories", "agents", "runs", "projects", "settings"];
 
-function getSectionFromHash(hash: string): AppSection {
-  const section = hash.replace(/^#/, "").toLowerCase();
-  switch (section) {
-    case "dashboard":
-    case "tasks":
-    case "stories":
-    case "agents":
-    case "runs":
-    case "projects":
-    case "settings":
-      return section;
-    default:
-      return defaultSection;
-  }
+function sectionFromPath(pathname: string): AppSection {
+  const segment = pathname.replace(/^\//, "").toLowerCase();
+  return SECTIONS.includes(segment as AppSection) ? (segment as AppSection) : "dashboard";
 }
 
 export function App() {
-  const [section, setSection] = useState<AppSection>(() => getSectionFromHash(window.location.hash));
+  const routerNavigate = useNavigate();
+  const location = useLocation();
+  const section = sectionFromPath(location.pathname);
+
+  const { theme, toggleTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [counts, setCounts] = useState<{ tasks: number | null; agents: number | null; runs: number | null; projects: number | null; stories: number | null }>({
     tasks: null,
     agents: null,
@@ -48,39 +44,45 @@ export function App() {
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    const handleHashChange = () => {
-      setSection(getSectionFromHash(window.location.hash));
-    };
-
-    window.addEventListener("hashchange", handleHashChange);
-    return () => window.removeEventListener("hashchange", handleHashChange);
-  }, []);
-
   const navigate = (nextSection: AppSection) => {
-    window.location.hash = nextSection;
-    setSection(nextSection);
+    routerNavigate(`/${nextSection}`);
+    setIsMobileSidebarOpen(false);
   };
 
   return (
     <main className="dashboard-bg">
+      <button
+        type="button"
+        className="mobile-hamburger"
+        onClick={() => setIsMobileSidebarOpen(true)}
+        aria-label="Open navigation"
+      >
+        ☰
+      </button>
       <div className={`dashboard-shell${isSidebarCollapsed ? " dashboard-shell--sidebar-collapsed" : ""}`}>
         <Sidebar
           activeSection={section}
           searchQuery={searchQuery}
           isCollapsed={isSidebarCollapsed}
+          isMobileOpen={isMobileSidebarOpen}
           counts={counts}
           onNavigate={navigate}
           onSearchChange={setSearchQuery}
           onToggleCollapse={() => setIsSidebarCollapsed((current) => !current)}
+          onCloseMobile={() => setIsMobileSidebarOpen(false)}
+          theme={theme}
+          onToggleTheme={toggleTheme}
         />
-        {section === "dashboard" ? <DashboardPage onNavigate={navigate} searchQuery={searchQuery} /> : null}
-        {section === "tasks" ? <TasksPage onNavigate={navigate} searchQuery={searchQuery} /> : null}
-        {section === "stories" ? <StoriesPage onNavigate={navigate} /> : null}
-        {section === "agents" ? <AgentsPage onNavigate={navigate} /> : null}
-        {section === "runs" ? <RunsPage /> : null}
-        {section === "projects" ? <ProjectsPage onNavigate={navigate} /> : null}
-        {section === "settings" ? <SettingsPage /> : null}
+        <Routes>
+          <Route path="/dashboard" element={<DashboardPage onNavigate={navigate} searchQuery={searchQuery} />} />
+          <Route path="/tasks" element={<TasksPage onNavigate={navigate} searchQuery={searchQuery} />} />
+          <Route path="/stories" element={<StoriesPage onNavigate={navigate} />} />
+          <Route path="/agents" element={<AgentsPage onNavigate={navigate} />} />
+          <Route path="/runs" element={<RunsPage />} />
+          <Route path="/projects" element={<ProjectsPage onNavigate={navigate} />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
       </div>
     </main>
   );

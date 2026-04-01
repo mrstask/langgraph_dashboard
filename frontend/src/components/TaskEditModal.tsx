@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useReducer } from "react";
 import { createPortal } from "react-dom";
 
 import type { BoardColumnId, TaskApiRecord } from "../lib/mockData";
@@ -12,21 +12,9 @@ const STATUS_DOT_COLORS: Partial<Record<BoardColumnId, string>> = {
   running: "var(--violet)",
 };
 
-type ProjectOption = {
-  id: number;
-  key: string;
-  name: string;
-};
-
-type AgentOption = {
-  id: number;
-  name: string;
-};
-
-type StoryOption = {
-  id: number;
-  title: string;
-};
+type ProjectOption = { id: number; key: string; name: string };
+type AgentOption = { id: number; name: string };
+type StoryOption = { id: number; title: string };
 
 type TaskEditModalProps = {
   task: TaskApiRecord | null;
@@ -54,47 +42,89 @@ export type TaskEditFormValue = {
   story_id: number | null;
 };
 
+type FormState = {
+  title: string;
+  shortDescription: string;
+  implementationDescription: string;
+  definitionOfDone: string;
+  description: string;
+  status: BoardColumnId;
+  priority: TaskApiRecord["priority"];
+  assignedAgentId: string;
+  humanOwner: string;
+  labels: string;
+  dueDate: string;
+  storyId: string;
+  isSubmitting: boolean;
+  isDeleting: boolean;
+  error: string | null;
+};
+
+type FormAction =
+  | { type: "SET_FIELD"; field: keyof FormState; value: string | number | boolean | null }
+  | { type: "LOAD"; task: TaskApiRecord };
+
 function toDatetimeLocal(iso: string | null): string {
   if (!iso) return "";
   return iso.slice(0, 16);
 }
 
+function formReducer(state: FormState, action: FormAction): FormState {
+  switch (action.type) {
+    case "SET_FIELD":
+      return { ...state, [action.field]: action.value };
+    case "LOAD": {
+      const t = action.task;
+      return {
+        title: t.title,
+        shortDescription: t.short_description ?? "",
+        implementationDescription: t.implementation_description ?? "",
+        definitionOfDone: t.definition_of_done ?? "",
+        description: t.description ?? "",
+        status: t.status,
+        priority: t.priority,
+        assignedAgentId: t.assigned_agent_id ? String(t.assigned_agent_id) : "",
+        humanOwner: t.human_owner ?? "",
+        labels: t.labels.join(", "),
+        dueDate: toDatetimeLocal(t.due_date),
+        storyId: t.story_id ? String(t.story_id) : "",
+        isSubmitting: false,
+        isDeleting: false,
+        error: null,
+      };
+    }
+  }
+}
+
+const INITIAL_STATE: FormState = {
+  title: "",
+  shortDescription: "",
+  implementationDescription: "",
+  definitionOfDone: "",
+  description: "",
+  status: "backlog",
+  priority: "medium",
+  assignedAgentId: "",
+  humanOwner: "",
+  labels: "",
+  dueDate: "",
+  storyId: "",
+  isSubmitting: false,
+  isDeleting: false,
+  error: null,
+};
+
 export function TaskEditModal({ task, projects, agents, stories, subtasks, onClose, onUpdate, onDelete }: TaskEditModalProps) {
-  const [title, setTitle] = useState("");
-  const [shortDescription, setShortDescription] = useState("");
-  const [implementationDescription, setImplementationDescription] = useState("");
-  const [definitionOfDone, setDefinitionOfDone] = useState("");
-  const [description, setDescription] = useState("");
-  const [status, setStatus] = useState<BoardColumnId>("backlog");
-  const [priority, setPriority] = useState<TaskApiRecord["priority"]>("medium");
-  const [assignedAgentId, setAssignedAgentId] = useState<string>("");
-  const [humanOwner, setHumanOwner] = useState("");
-  const [labels, setLabels] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [storyId, setStoryId] = useState<string>("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [form, dispatch] = useReducer(formReducer, INITIAL_STATE);
 
   useEffect(() => {
-    if (!task) return;
-    setTitle(task.title);
-    setShortDescription(task.short_description ?? "");
-    setImplementationDescription(task.implementation_description ?? "");
-    setDefinitionOfDone(task.definition_of_done ?? "");
-    setDescription(task.description ?? "");
-    setStatus(task.status);
-    setPriority(task.priority);
-    setAssignedAgentId(task.assigned_agent_id ? String(task.assigned_agent_id) : "");
-    setHumanOwner(task.human_owner ?? "");
-    setLabels(task.labels.join(", "));
-    setDueDate(toDatetimeLocal(task.due_date));
-    setStoryId(task.story_id ? String(task.story_id) : "");
-    setError(null);
-    setIsSubmitting(false);
+    if (task) dispatch({ type: "LOAD", task });
   }, [task]);
 
   if (!task) return null;
+
+  const set = (field: keyof FormState, value: string | number | boolean | null) =>
+    dispatch({ type: "SET_FIELD", field, value });
 
   const projectName = projects.find((p) => p.id === task.project_id);
 
@@ -117,106 +147,79 @@ export function TaskEditModal({ task, projects, agents, stories, subtasks, onClo
           className="modal-form"
           onSubmit={async (event) => {
             event.preventDefault();
-            if (!title.trim()) {
-              setError("Title is required.");
+            if (!form.title.trim()) {
+              set("error", "Title is required.");
               return;
             }
-            setIsSubmitting(true);
-            setError(null);
+            set("isSubmitting", true);
+            set("error", null);
             try {
               await onUpdate(task.id, {
-                title: title.trim(),
-                short_description: shortDescription.trim(),
-                implementation_description: implementationDescription.trim(),
-                definition_of_done: definitionOfDone.trim(),
-                description: description.trim(),
-                status,
-                priority,
-                assigned_agent_id: assignedAgentId ? Number(assignedAgentId) : null,
-                human_owner: humanOwner.trim(),
-                labels: labels
-                  .split(",")
-                  .map((l) => l.trim())
-                  .filter(Boolean),
-                due_date: dueDate || null,
-                story_id: storyId ? Number(storyId) : null,
+                title: form.title.trim(),
+                short_description: form.shortDescription.trim(),
+                implementation_description: form.implementationDescription.trim(),
+                definition_of_done: form.definitionOfDone.trim(),
+                description: form.description.trim(),
+                status: form.status,
+                priority: form.priority,
+                assigned_agent_id: form.assignedAgentId ? Number(form.assignedAgentId) : null,
+                human_owner: form.humanOwner.trim(),
+                labels: form.labels.split(",").map((l) => l.trim()).filter(Boolean),
+                due_date: form.dueDate || null,
+                story_id: form.storyId ? Number(form.storyId) : null,
               });
             } catch (submitError) {
-              setError(submitError instanceof Error ? submitError.message : "Failed to update task");
+              set("error", submitError instanceof Error ? submitError.message : "Failed to update task");
             } finally {
-              setIsSubmitting(false);
+              set("isSubmitting", false);
             }
           }}
         >
           <label className="field">
             <span>Title</span>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Task title" />
+            <input value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="Task title" />
           </label>
 
           <label className="field">
             <span>Short Description <span className="field__hint">(shown on board card)</span></span>
-            <textarea
-              value={shortDescription}
-              onChange={(e) => setShortDescription(e.target.value)}
-              placeholder="Brief summary visible on the Kanban card"
-              rows={3}
-            />
+            <textarea value={form.shortDescription} onChange={(e) => set("shortDescription", e.target.value)} placeholder="Brief summary visible on the Kanban card" rows={3} />
           </label>
 
           <label className="field">
             <span>Implementation Description <span className="field__hint">(detailed notes)</span></span>
-            <textarea
-              value={implementationDescription}
-              onChange={(e) => setImplementationDescription(e.target.value)}
-              placeholder="Technical details, steps, acceptance criteria"
-              rows={5}
-            />
+            <textarea value={form.implementationDescription} onChange={(e) => set("implementationDescription", e.target.value)} placeholder="Technical details, steps, acceptance criteria" rows={5} />
           </label>
 
           <label className="field">
             <span>Definition of Done</span>
-            <textarea
-              value={definitionOfDone}
-              onChange={(e) => setDefinitionOfDone(e.target.value)}
-              placeholder="Criteria that must be met for this task to be considered complete"
-              rows={3}
-            />
+            <textarea value={form.definitionOfDone} onChange={(e) => set("definitionOfDone", e.target.value)} placeholder="Criteria that must be met for this task to be considered complete" rows={3} />
           </label>
 
           <div className="field-grid">
             <label className="field">
               <span>Story</span>
-              <select value={storyId} onChange={(e) => setStoryId(e.target.value)}>
+              <select value={form.storyId} onChange={(e) => set("storyId", e.target.value)}>
                 <option value="">No story</option>
                 {stories.map((story) => (
-                  <option key={story.id} value={story.id}>
-                    {story.title}
-                  </option>
+                  <option key={story.id} value={story.id}>{story.title}</option>
                 ))}
               </select>
             </label>
 
             <label className="field">
               <span>Status</span>
-              <select value={status} onChange={(e) => setStatus(e.target.value as BoardColumnId)}>
-                {["backlog", "architect", "develop", "testing", "done", "failed", "ready", "running", "review"].map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
+              <select value={form.status} onChange={(e) => set("status", e.target.value)}>
+                {["backlog", "architect", "develop", "testing", "done", "failed", "ready", "running", "review"].map((v) => (
+                  <option key={v} value={v}>{v}</option>
                 ))}
               </select>
             </label>
 
             <label className="field">
               <span>Priority</span>
-              <select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value as TaskApiRecord["priority"])}
-              >
-                {["low", "medium", "high", "critical"].map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
+              <select value={form.priority} onChange={(e) => set("priority", e.target.value)}>
+                {["low", "medium", "high", "critical"].map((v) => (
+                  <option key={v} value={v}>{v}</option>
                 ))}
               </select>
             </label>
@@ -225,34 +228,26 @@ export function TaskEditModal({ task, projects, agents, stories, subtasks, onClo
           <div className="field-grid">
             <label className="field">
               <span>Assigned Agent</span>
-              <select value={assignedAgentId} onChange={(e) => setAssignedAgentId(e.target.value)}>
+              <select value={form.assignedAgentId} onChange={(e) => set("assignedAgentId", e.target.value)}>
                 <option value="">Unassigned</option>
                 {agents.map((agent) => (
-                  <option key={agent.id} value={agent.id}>
-                    {agent.name}
-                  </option>
+                  <option key={agent.id} value={agent.id}>{agent.name}</option>
                 ))}
               </select>
             </label>
 
             <label className="field">
               <span>Labels</span>
-              <input
-                value={labels}
-                onChange={(e) => setLabels(e.target.value)}
-                placeholder="ui, backend"
-              />
+              <input value={form.labels} onChange={(e) => set("labels", e.target.value)} placeholder="ui, backend" />
             </label>
           </div>
 
-          {error ? <div className="status-banner status-banner--error">{error}</div> : null}
+          {form.error ? <div className="status-banner status-banner--error">{form.error}</div> : null}
 
           <div className="modal-actions">
-            <button type="button" className="secondary-button" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="submit" className="primary-button" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Changes"}
+            <button type="button" className="secondary-button" onClick={onClose}>Cancel</button>
+            <button type="submit" className="primary-button" disabled={form.isSubmitting}>
+              {form.isSubmitting ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </form>
@@ -263,10 +258,7 @@ export function TaskEditModal({ task, projects, agents, stories, subtasks, onClo
             <ul className="subtask-list">
               {subtasks.map((sub) => (
                 <li key={sub.id} className="subtask-item">
-                  <span
-                    className="subtask-item__status-dot"
-                    style={{ background: STATUS_DOT_COLORS[sub.status] ?? "var(--muted)" }}
-                  />
+                  <span className="subtask-item__status-dot" style={{ background: STATUS_DOT_COLORS[sub.status] ?? "var(--muted)" }} />
                   <span className="subtask-item__title">{sub.title}</span>
                   <span className={`priority-chip priority-chip--${sub.priority}`}>{sub.priority}</span>
                   <span className="subtask-item__status-label">{sub.status}</span>
@@ -284,18 +276,18 @@ export function TaskEditModal({ task, projects, agents, stories, subtasks, onClo
           <button
             type="button"
             className="archive-card__btn"
-            disabled={isDeleting || isSubmitting}
+            disabled={form.isDeleting || form.isSubmitting}
             onClick={async () => {
-              setIsDeleting(true);
+              set("isDeleting", true);
               try {
                 await onDelete(task.id);
               } catch {
-                setError("Failed to delete task.");
-                setIsDeleting(false);
+                set("error", "Failed to delete task.");
+                set("isDeleting", false);
               }
             }}
           >
-            {isDeleting ? "Deleting…" : "Delete task"}
+            {form.isDeleting ? "Deleting\u2026" : "Delete task"}
           </button>
         </div>
       </div>

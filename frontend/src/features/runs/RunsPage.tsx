@@ -1,29 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { TopBar } from "../../components/TopBar";
 import { fetchAgents, fetchRuns, fetchTasks, type AgentRecord, type RunRecord } from "../../lib/api";
+import { formatDuration, formatTime } from "../../lib/format";
+import { useVisibilityPolling } from "../../lib/useVisibilityPolling";
 import { RunDetailPanel } from "./RunDetailPanel";
-
-function formatDuration(started: string | null, finished: string | null): string {
-  if (!started) return "—";
-  const start = new Date(started).getTime();
-  const end = finished ? new Date(finished).getTime() : Date.now();
-  const seconds = Math.round((end - start) / 1000);
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.floor(seconds / 60);
-  const remaining = seconds % 60;
-  return remaining > 0 ? `${minutes}m ${remaining}s` : `${minutes}m`;
-}
-
-function formatTime(iso: string | null): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 function RunStatusChip({ status }: { status: string }) {
   return <span className={`run-status-chip run-status-chip--${status.replace("_", "-")}`}>{status}</span>;
@@ -68,14 +49,13 @@ export function RunsPage() {
     };
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchRuns()
-        .then((records) => setRuns(records))
-        .catch(() => {});
-    }, 30_000);
-    return () => clearInterval(interval);
+  const pollRuns = useCallback(() => {
+    fetchRuns()
+      .then((records) => setRuns(records))
+      .catch(() => {});
   }, []);
+
+  useVisibilityPolling(pollRuns, 30_000);
 
   const agentsMap = useMemo(() => new Map(agents.map((a) => [a.id, a.name])), [agents]);
 

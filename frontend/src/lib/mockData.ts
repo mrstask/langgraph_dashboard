@@ -61,33 +61,58 @@ const boardTemplate: Array<Omit<BoardColumnData, "tasks">> = [
   { id: "failed", title: "Failed", tone: "red" },
 ];
 
+export const COLUMN_ORDER: BoardColumnId[] = boardTemplate.map((c) => c.id);
+
+export type SortMode = "newest" | "priority" | "agent";
+
+const PRIORITY_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+
+function sortTasks(tasks: TaskApiRecord[], sort: SortMode): TaskApiRecord[] {
+  const sorted = [...tasks];
+  switch (sort) {
+    case "priority":
+      sorted.sort((a, b) => (PRIORITY_ORDER[a.priority] ?? 9) - (PRIORITY_ORDER[b.priority] ?? 9));
+      break;
+    case "agent":
+      sorted.sort((a, b) => (a.assigned_agent_id ?? Infinity) - (b.assigned_agent_id ?? Infinity));
+      break;
+    case "newest":
+    default:
+      sorted.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+      break;
+  }
+  return sorted;
+}
+
 export function buildBoardColumns(
   tasks: TaskApiRecord[],
   storiesMap: Map<number, string> = new Map(),
+  sort: SortMode = "newest",
 ): BoardColumnData[] {
   return boardTemplate.map((column) => ({
     ...column,
-    tasks: tasks
-      .filter((task) => task.status === column.id)
-      .map((task) => ({
-        id: task.id,
-        title: task.title,
-        description: task.short_description ?? task.description ?? "",
-        priority: task.priority,
-        runStatus: deriveRunStatus(task.status),
-        updatedAt: formatRelativeTime(task.updated_at),
-        agentInitials: buildAgentInitials(task.assigned_agent_id),
-        ownerInitials: buildOwnerInitials(task.human_owner),
-        storyTitle: task.story_id != null ? (storiesMap.get(task.story_id) ?? null) : null,
-        actionLabel: parseActionLabel(task.labels),
-        retryCount: parseRetryCount(task.labels),
-        hasMaxRetriesError: task.labels.includes("error:max-retries"),
-        isSubtask: task.parent_task_id != null,
-      })),
+    tasks: sortTasks(
+      tasks.filter((task) => task.status === column.id),
+      sort,
+    ).map((task) => ({
+      id: task.id,
+      title: task.title,
+      description: task.short_description ?? task.description ?? "",
+      priority: task.priority,
+      runStatus: deriveRunStatus(task.status),
+      updatedAt: formatRelativeTime(task.updated_at),
+      agentInitials: buildAgentInitials(task.assigned_agent_id),
+      ownerInitials: buildOwnerInitials(task.human_owner),
+      storyTitle: task.story_id != null ? (storiesMap.get(task.story_id) ?? null) : null,
+      actionLabel: parseActionLabel(task.labels),
+      retryCount: parseRetryCount(task.labels),
+      hasMaxRetriesError: task.labels.includes("error:max-retries"),
+      isSubtask: task.parent_task_id != null,
+    })),
   }));
 }
 
-export function buildSummaryStats(columns: BoardColumnData[]) {
+export function buildSummaryStats(columns: BoardColumnData[], agentCount = 0) {
   const allTasks = columns.flatMap((column) => column.tasks);
   const activeCount =
     (columns.find((column) => column.id === "architect")?.tasks.length ?? 0) +
@@ -104,8 +129,8 @@ export function buildSummaryStats(columns: BoardColumnData[]) {
     },
     {
       label: "Agents Online",
-      value: "3",
-      detail: "Live count is still mocked until agent API wiring lands",
+      value: String(agentCount),
+      detail: `${agentCount} agent${agentCount !== 1 ? "s" : ""} registered in the workspace`,
     },
     {
       label: "Failed Runs",

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 type ProjectCreateModalProps = {
   isOpen: boolean;
@@ -34,7 +35,7 @@ export function ProjectCreateModal({ isOpen, onClose, onCreate }: ProjectCreateM
     return null;
   }
 
-  return (
+  return createPortal(
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="create-project-title">
       <div className="modal-card">
         <div className="modal-header">
@@ -108,6 +109,7 @@ export function ProjectCreateModal({ isOpen, onClose, onCreate }: ProjectCreateM
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

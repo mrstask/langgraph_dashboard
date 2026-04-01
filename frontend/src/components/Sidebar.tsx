@@ -12,10 +12,14 @@ type SidebarProps = {
   activeSection: AppSection;
   searchQuery: string;
   isCollapsed: boolean;
+  isMobileOpen?: boolean;
   counts?: SidebarCounts;
   onNavigate: (section: AppSection) => void;
   onSearchChange: (value: string) => void;
   onToggleCollapse: () => void;
+  onCloseMobile?: () => void;
+  theme?: "light" | "dark";
+  onToggleTheme?: () => void;
 };
 
 const emptyCounts = { tasks: null, agents: null, runs: null, projects: null, stories: null };
@@ -24,13 +28,17 @@ export function Sidebar({
   activeSection,
   searchQuery,
   isCollapsed,
+  isMobileOpen = false,
   counts = emptyCounts,
   onNavigate,
   onSearchChange,
   onToggleCollapse,
+  onCloseMobile,
+  theme = "light",
+  onToggleTheme,
 }: SidebarProps) {
   const navItems: Array<{ label: string; value: AppSection; count?: number | null }> = [
-    { label: "Dashboard", value: "dashboard", count: counts.tasks },
+    { label: "Dashboard", value: "dashboard" },
     { label: "Tasks", value: "tasks", count: counts.tasks },
     { label: "Stories", value: "stories", count: counts.stories },
     { label: "Agents", value: "agents", count: counts.agents },
@@ -39,16 +47,27 @@ export function Sidebar({
     { label: "Settings", value: "settings" },
   ];
   return (
-    <aside className={`sidebar${isCollapsed ? " sidebar--collapsed" : ""}`}>
-      <button
-        type="button"
-        className="sidebar-toggle sidebar-toggle--edge"
-        onClick={onToggleCollapse}
-        aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-      >
-        {isCollapsed ? "›" : "‹"}
-      </button>
+    <aside className={`sidebar${isCollapsed ? " sidebar--collapsed" : ""}${isMobileOpen ? " sidebar--mobile-open" : ""}`}>
+      {isMobileOpen ? (
+        <button
+          type="button"
+          className="sidebar-toggle sidebar-toggle--edge"
+          onClick={onCloseMobile}
+          aria-label="Close navigation"
+        >
+          ✕
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="sidebar-toggle sidebar-toggle--edge"
+          onClick={onToggleCollapse}
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {isCollapsed ? "›" : "‹"}
+        </button>
+      )}
 
       <div>
         <div className="sidebar-head">
@@ -95,6 +114,18 @@ export function Sidebar({
       </div>
 
       <div className="sidebar-footer">
+        {onToggleTheme ? (
+          <button
+            type="button"
+            className="sidebar-theme-toggle"
+            onClick={onToggleTheme}
+            aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+            title={theme === "light" ? "Dark mode" : "Light mode"}
+          >
+            {theme === "light" ? "\u263E" : "\u2600"}{" "}
+            {!isCollapsed ? (theme === "light" ? "Dark mode" : "Light mode") : null}
+          </button>
+        ) : null}
         <div className="pro-card">
           {isCollapsed ? (
             <strong>MR</strong>
