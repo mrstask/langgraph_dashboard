@@ -9,6 +9,7 @@ from app.models import (
     Label,
     Owner,
     Project,
+    PromptSuggestion,
     Task,
     TaskLabel,
     TaskRun,
