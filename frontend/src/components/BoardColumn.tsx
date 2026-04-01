@@ -43,19 +43,20 @@ export function BoardColumn({
         </div>
         <div className="column-header__actions">
           <button
-            className="icon-button"
+            className="icon-button icon-button--collapse"
             type="button"
             onClick={() => setIsCollapsed((v) => !v)}
             aria-label={isCollapsed ? `Expand ${title} column` : `Collapse ${title} column`}
             title={isCollapsed ? "Expand" : "Collapse"}
           >
-            {isCollapsed ? "+" : "\u2013"}
+            {isCollapsed ? "▸" : "▾"}
           </button>
           <button
             className="icon-button"
             type="button"
             onClick={() => onCreateTask?.(id)}
             aria-label={`Add task to ${title}`}
+            title="Add task"
           >
             +
           </button>

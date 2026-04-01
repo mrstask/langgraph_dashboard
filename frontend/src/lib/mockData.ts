@@ -58,7 +58,6 @@ const boardTemplate: Array<Omit<BoardColumnData, "tasks">> = [
   { id: "develop", title: "Develop", tone: "blue" },
   { id: "testing", title: "Testing", tone: "amber" },
   { id: "done", title: "Done", tone: "green" },
-  { id: "failed", title: "Failed", tone: "red" },
 ];
 
 export const COLUMN_ORDER: BoardColumnId[] = boardTemplate.map((c) => c.id);
@@ -118,29 +117,25 @@ export function buildSummaryStats(columns: BoardColumnData[], agentCount = 0) {
     (columns.find((column) => column.id === "architect")?.tasks.length ?? 0) +
     (columns.find((column) => column.id === "develop")?.tasks.length ?? 0) +
     (columns.find((column) => column.id === "testing")?.tasks.length ?? 0);
-  const failedCount = columns.find((column) => column.id === "failed")?.tasks.length ?? 0;
   const inReviewCount = allTasks.filter((t) => t.actionLabel === "review").length;
+  const doneCount = columns.find((column) => column.id === "done")?.tasks.length ?? 0;
 
   return [
     {
       label: "Total Tasks",
       value: String(allTasks.length),
-      detail: `${activeCount} active across agent lanes`,
     },
     {
       label: "Agents Online",
       value: String(agentCount),
-      detail: `${agentCount} agent${agentCount !== 1 ? "s" : ""} registered in the workspace`,
     },
     {
-      label: "Failed Runs",
-      value: String(failedCount),
-      detail: failedCount > 0 ? "Needs diagnostics review" : "No failed runs in the board",
+      label: "Done",
+      value: String(doneCount),
     },
     {
       label: "Awaiting Review",
       value: String(inReviewCount),
-      detail: inReviewCount > 0 ? "PM review pending" : "All tasks in progress",
     },
   ];
 }

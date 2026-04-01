@@ -42,9 +42,7 @@ export function TopBar({
   return (
     <header className="topbar">
       <div>
-        <p className="eyebrow">{eyebrow}</p>
         <h1>{title}</h1>
-        {subtitle ? <p className="topbar-subtitle">{subtitle}</p> : null}
       </div>
 
       {hasActions ? (

@@ -201,7 +201,6 @@ export function DashboardPage({ onNavigate, searchQuery }: DashboardPageProps) {
     <section className="dashboard-content">
       <TopBar
         title="Kanban Dashboard"
-        subtitle="Track backlog, execution, review, and failures across agent lanes."
         projects={projects}
         selectedProjectId={selectedProjectId}
         sortValue={sortValue}
@@ -241,7 +240,6 @@ export function DashboardPage({ onNavigate, searchQuery }: DashboardPageProps) {
           <article key={item.label} className="summary-card">
             <span>{item.label}</span>
             <strong>{item.value}</strong>
-            <p>{item.detail}</p>
           </article>
         ))}
       </div>
