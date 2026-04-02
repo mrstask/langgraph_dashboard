@@ -19,6 +19,7 @@ class TaskRead(BaseModel):
     due_date: datetime | None = None
     story_id: int | None = None
     parent_task_id: int | None = None
+    queue_position: int | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -42,6 +43,7 @@ class TaskCreate(BaseModel):
     due_date: datetime | None = None
     story_id: int | None = None
     parent_task_id: int | None = None
+    queue_position: int | None = None
 
 
 class TaskUpdate(BaseModel):
@@ -58,3 +60,4 @@ class TaskUpdate(BaseModel):
     due_date: datetime | None = None
     story_id: int | None = None
     parent_task_id: int | None = None
+    queue_position: int | None = None

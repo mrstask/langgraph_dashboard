@@ -55,7 +55,8 @@ export function RunsPage() {
       .catch(() => {});
   }, []);
 
-  useVisibilityPolling(pollRuns, 30_000);
+  const hasRunning = runs.some((r) => r.status === "running" || r.status === "in_progress");
+  useVisibilityPolling(pollRuns, hasRunning ? 5_000 : 30_000);
 
   const agentsMap = useMemo(() => new Map(agents.map((a) => [a.id, a.name])), [agents]);
 

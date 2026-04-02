@@ -44,6 +44,7 @@ export function Sidebar({
     { label: "Agents", value: "agents", count: counts.agents },
     { label: "Runs", value: "runs", count: counts.runs },
     { label: "Projects", value: "projects", count: counts.projects },
+    { label: "Queue", value: "queue" },
     { label: "Settings", value: "settings" },
   ];
   return (

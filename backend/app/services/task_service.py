@@ -63,6 +63,7 @@ def create_task(db: Session, payload: TaskCreate) -> TaskRead:
         due_date=payload.due_date,
         story_id=payload.story_id,
         parent_task_id=payload.parent_task_id,
+        queue_position=payload.queue_position,
     )
     created_task = repository.create(task=task, label_names=normalized_labels)
     return serialize_task(created_task)
@@ -96,6 +97,7 @@ def update_task(db: Session, task_id: int, payload: TaskUpdate) -> TaskRead:
         label_names=normalized_labels,
         story_id=payload.story_id,
         parent_task_id=payload.parent_task_id,
+        queue_position=payload.queue_position,
     )
     return serialize_task(updated_task)
 
@@ -122,6 +124,7 @@ def serialize_task(task) -> TaskRead:
         due_date=task.due_date,
         story_id=task.story_id,
         parent_task_id=task.parent_task_id,
+        queue_position=task.queue_position,
         created_at=task.created_at,
         updated_at=task.updated_at,
     )

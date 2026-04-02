@@ -1,6 +1,7 @@
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-import type { RunRecord } from "../../lib/api";
+import { fetchRun, type RunRecord } from "../../lib/api";
 import { formatDuration, formatTimeWithSeconds } from "../../lib/format";
 
 type RunDetailPanelProps = {
@@ -10,11 +11,41 @@ type RunDetailPanelProps = {
   onClose: () => void;
 };
 
+const LIVE_STATUSES = new Set(["running", "in_progress", "in-progress"]);
+
 function RunStatusChip({ status }: { status: string }) {
   return <span className={`run-status-chip run-status-chip--${status.replace("_", "-")}`}>{status}</span>;
 }
 
-export function RunDetailPanel({ run, agentsMap, tasksMap, onClose }: RunDetailPanelProps) {
+export function RunDetailPanel({ run: initialRun, agentsMap, tasksMap, onClose }: RunDetailPanelProps) {
+  const [run, setRun] = useState<RunRecord>(initialRun);
+  const logsRef = useRef<HTMLPreElement>(null);
+  const isLive = LIVE_STATUSES.has(run.status);
+
+  // Reset when a different run is selected
+  useEffect(() => {
+    setRun(initialRun);
+  }, [initialRun.id]);
+
+  // Poll every 2s while run is active
+  useEffect(() => {
+    if (!isLive) return;
+    const interval = setInterval(() => {
+      fetchRun(run.id).then(setRun).catch(() => {});
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [run.id, isLive]);
+
+  // Auto-scroll logs to bottom whenever logs_text grows
+  useEffect(() => {
+    const el = logsRef.current;
+    if (!el) return;
+    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+    if (isNearBottom || isLive) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [run.logs_text, isLive]);
+
   const agentName = run.agent_id != null ? (agentsMap.get(run.agent_id) ?? `Agent #${run.agent_id}`) : "—";
   const taskTitle = tasksMap.get(run.task_id) ?? `Task #${run.task_id}`;
 
@@ -28,6 +59,7 @@ export function RunDetailPanel({ run, agentsMap, tasksMap, onClose }: RunDetailP
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <RunStatusChip status={run.status} />
+            {isLive && <span className="run-live-badge">● LIVE</span>}
             <button type="button" className="icon-button icon-button--dark" onClick={onClose} aria-label="Close">
               ×
             </button>
@@ -71,10 +103,15 @@ export function RunDetailPanel({ run, agentsMap, tasksMap, onClose }: RunDetailP
           </div>
         ) : null}
 
-        {run.logs_text ? (
+        {run.logs_text || isLive ? (
           <div className="run-detail__section">
-            <p className="run-detail__section-label">Logs</p>
-            <pre className="run-detail__logs">{run.logs_text}</pre>
+            <p className="run-detail__section-label">
+              Logs
+              {isLive && <span className="run-detail__logs-live-dot" />}
+            </p>
+            <pre ref={logsRef} className="run-detail__logs">
+              {run.logs_text ?? "Waiting for output…"}
+            </pre>
           </div>
         ) : null}
       </div>

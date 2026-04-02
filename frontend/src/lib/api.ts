@@ -265,3 +265,26 @@ export async function fetchRuns(): Promise<RunRecord[]> {
   }
   return response.json();
 }
+
+export async function fetchRun(runId: number): Promise<RunRecord> {
+  const response = await fetch(`${API_BASE_URL}/runs/${runId}`);
+  if (!response.ok) {
+    throw new Error("Failed to load run");
+  }
+  return response.json();
+}
+
+export type QueueGroup = {
+  parent: TaskApiRecord;
+  subtasks: TaskApiRecord[];
+  total: number;
+  done: number;
+};
+
+export async function fetchQueue(): Promise<QueueGroup[]> {
+  const response = await fetch(`${API_BASE_URL}/queue`);
+  if (!response.ok) {
+    throw new Error("Failed to load queue");
+  }
+  return response.json();
+}

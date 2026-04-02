@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import backref, relationship
 
@@ -24,6 +22,7 @@ class Task(TimestampMixin, Base):
     story_id = Column(Integer, ForeignKey("stories.id"), nullable=True)
     definition_of_done = Column(Text(), nullable=True)
     parent_task_id = Column(Integer, ForeignKey("tasks.id"), nullable=True)
+    queue_position = Column(Integer, nullable=True)
 
     owner_ref = relationship("Owner")
     task_labels = relationship("TaskLabel", cascade="all, delete-orphan")

@@ -6,15 +6,16 @@ import { fetchCounts } from "../lib/api";
 import { useTheme } from "../lib/useTheme";
 import { AgentsPage } from "../features/agents/AgentsPage";
 import { ProjectsPage } from "../features/projects/ProjectsPage";
+import { QueuePage } from "../features/queue/QueuePage";
 import { RunsPage } from "../features/runs/RunsPage";
 import { StoriesPage } from "../features/stories/StoriesPage";
 import { DashboardPage } from "../features/tasks/DashboardPage";
 import { TasksPage } from "../features/tasks/TasksPage";
 import { SettingsPage } from "../features/settings/SettingsPage";
 
-export type AppSection = "dashboard" | "tasks" | "stories" | "agents" | "runs" | "projects" | "settings";
+export type AppSection = "dashboard" | "tasks" | "stories" | "agents" | "runs" | "projects" | "queue" | "settings";
 
-const SECTIONS: AppSection[] = ["dashboard", "tasks", "stories", "agents", "runs", "projects", "settings"];
+const SECTIONS: AppSection[] = ["dashboard", "tasks", "stories", "agents", "runs", "projects", "queue", "settings"];
 
 function sectionFromPath(pathname: string): AppSection {
   const segment = pathname.replace(/^\//, "").toLowerCase();
@@ -80,6 +81,7 @@ export function App() {
           <Route path="/agents" element={<AgentsPage onNavigate={navigate} />} />
           <Route path="/runs" element={<RunsPage />} />
           <Route path="/projects" element={<ProjectsPage onNavigate={navigate} />} />
+          <Route path="/queue" element={<QueuePage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

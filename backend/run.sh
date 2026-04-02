@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VENV_PYTHON="$ROOT_DIR/.venv/bin/python"
+VENV_PYTHON="$ROOT_DIR/backend/.venv/bin/python"
 
 if [[ ! -x "$VENV_PYTHON" ]]; then
   echo "Missing virtualenv interpreter at $VENV_PYTHON" >&2
