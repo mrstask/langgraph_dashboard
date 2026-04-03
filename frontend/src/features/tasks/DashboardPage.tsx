@@ -7,7 +7,7 @@ import { TaskCreateModal, type TaskCreateFormValue } from "../../components/Task
 import { TaskEditModal, type TaskEditFormValue } from "../../components/TaskEditModal";
 import { TopBar, type SortValue } from "../../components/TopBar";
 import { createTask, deleteTask, fetchAgents, fetchProjects, fetchStories, fetchTasks, moveTask, updateTask } from "../../lib/api";
-import type { StoryRecord } from "../../lib/api";
+import type { AgentRecord, StoryRecord } from "../../lib/api";
 import {
   buildBoardColumns,
   buildSummaryStats,
@@ -27,7 +27,7 @@ type DashboardPageProps = {
 export function DashboardPage({ onNavigate, searchQuery }: DashboardPageProps) {
   const [tasks, setTasks] = useState<TaskApiRecord[]>([]);
   const [projects, setProjects] = useState<Array<{ id: number; key: string; name: string }>>([]);
-  const [agents, setAgents] = useState<Array<{ id: number; name: string }>>([]);
+  const [agents, setAgents] = useState<AgentRecord[]>([]);
   const [stories, setStories] = useState<StoryRecord[]>([]);
   const [draggedTaskId, setDraggedTaskId] = useState<number | null>(null);
   const [dropTargetColumnId, setDropTargetColumnId] = useState<BoardColumnId | null>(null);
@@ -99,7 +99,8 @@ export function DashboardPage({ onNavigate, searchQuery }: DashboardPageProps) {
     [normalizedQuery, selectedProjectId, tasks],
   );
   const columns = useMemo(() => buildBoardColumns(filteredTasks, storiesMap, sortValue), [filteredTasks, storiesMap, sortValue]);
-  const summaryStats = useMemo(() => buildSummaryStats(columns, agents.length), [columns, agents.length]);
+  const onlineAgentCount = useMemo(() => new Set(agents.filter((a) => a.status === "online").map((a) => a.agent_type)).size, [agents]);
+  const summaryStats = useMemo(() => buildSummaryStats(columns, onlineAgentCount), [columns, onlineAgentCount]);
 
   const handleDragStart = (taskId: number) => {
     setDraggedTaskId(taskId);

@@ -26,7 +26,7 @@ export function BoardColumn({
   onDropTask,
   children,
 }: BoardColumnProps) {
-  const [isCollapsed, setIsCollapsed] = useState(count === 0);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
   const childArray = Children.toArray(children);

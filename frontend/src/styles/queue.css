@@ -93,6 +93,11 @@
   text-transform: capitalize;
 }
 
+.queue-group__count {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
 /* ── Progress bar ───────────────────────────────────────────────────────── */
 
 .queue-progress {

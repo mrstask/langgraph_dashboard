@@ -76,6 +76,7 @@ function QueueGroupCard({ group }: { group: QueueGroup }) {
             <div className="queue-group__subtitle">
               <StatusBadge status={group.parent.status} />
               <span className="queue-group__priority">{group.parent.priority}</span>
+              <span className="queue-group__count">{group.total} subtask{group.total !== 1 ? "s" : ""}</span>
             </div>
           </div>
         </div>
