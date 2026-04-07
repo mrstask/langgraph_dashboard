@@ -7,6 +7,7 @@ export type ProjectRecord = {
   key: string;
   name: string;
   description?: string | null;
+  root_path?: string | null;
   created_at?: string;
   updated_at?: string;
 };
@@ -19,6 +20,7 @@ export type AgentRecord = {
   status?: string;
   agent_type?: string;
   capabilities?: string[];
+  config?: Record<string, unknown>;
   created_at?: string;
   updated_at?: string;
 };
@@ -26,7 +28,7 @@ export type AgentRecord = {
 export type RunRecord = {
   id: number;
   task_id: number;
-  agent_id: number;
+  agent_id: number | null;
   pipeline_type: string;
   status: string;
   started_at: string | null;
@@ -35,6 +37,8 @@ export type RunRecord = {
   output_payload: Record<string, unknown>;
   error_message: string | null;
   logs_text: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type StoryRecord = {
@@ -64,6 +68,8 @@ export type TaskCreatePayload = {
   labels: string[];
   due_date: string | null;
   story_id: number | null;
+  parent_task_id: number | null;
+  queue_position: number | null;
 };
 
 export type TaskUpdatePayload = {
@@ -79,6 +85,8 @@ export type TaskUpdatePayload = {
   labels: string[];
   due_date: string | null;
   story_id: number | null;
+  parent_task_id: number | null;
+  queue_position: number | null;
 };
 
 export type AgentCreatePayload = {
@@ -95,6 +103,13 @@ export type ProjectCreatePayload = {
   key: string;
   name: string;
   description: string;
+  root_path?: string;
+};
+
+export type ProjectUpdatePayload = {
+  name?: string;
+  description?: string;
+  root_path?: string;
 };
 
 export async function fetchTasks(): Promise<TaskApiRecord[]> {
@@ -196,6 +211,22 @@ export async function createProject(payload: ProjectCreatePayload): Promise<Proj
 
   if (!response.ok) {
     throw new Error("Failed to create project");
+  }
+
+  return response.json();
+}
+
+export async function updateProject(projectId: number, payload: ProjectUpdatePayload): Promise<ProjectRecord> {
+  const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to update project");
   }
 
   return response.json();

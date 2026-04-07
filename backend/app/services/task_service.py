@@ -9,7 +9,7 @@ from app.constants.task_metadata import (
 )
 from app.models.task import Task
 from app.repositories.task_repository import TaskRepository
-from app.schemas.task import TaskCreate, TaskRead, TaskUpdate
+from app.schemas.task import TaskCreate, TaskRead, TaskStatusMove, TaskUpdate
 
 
 def delete_task(db: Session, task_id: int) -> None:
@@ -25,37 +25,28 @@ def list_tasks(db: Session) -> list[TaskRead]:
     return [serialize_task(task) for task in repository.list_all()]
 
 
-def move_task(db: Session, task_id: int, status: str) -> TaskRead:
+def move_task(db: Session, task_id: int, payload: TaskStatusMove) -> TaskRead:
     repository = TaskRepository(db)
     task = repository.get_by_id(task_id)
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    if status not in TASK_STATUS_TO_CODE:
-        raise HTTPException(status_code=400, detail=f"Unknown task status: {status}")
-
-    updated_task = repository.update_status(task=task, status=TASK_STATUS_TO_CODE[status])
+    updated_task = repository.update_status(task=task, status=TASK_STATUS_TO_CODE[payload.status])
     return serialize_task(updated_task)
 
 
 def create_task(db: Session, payload: TaskCreate) -> TaskRead:
     repository = TaskRepository(db)
 
-    if payload.status not in TASK_STATUS_TO_CODE:
-        raise HTTPException(status_code=400, detail=f"Unknown task status: {payload.status}")
-    if payload.priority not in TASK_PRIORITY_TO_CODE:
-        raise HTTPException(status_code=400, detail=f"Unknown task priority: {payload.priority}")
-
-    owner = repository.get_or_create_owner(payload.human_owner.strip() if payload.human_owner else None)
-    normalized_labels = sorted({label.strip() for label in payload.labels if label.strip()})
+    owner = repository.get_or_create_owner(payload.human_owner)
 
     task = Task(
         project_id=payload.project_id,
-        title=payload.title.strip(),
-        description=payload.description.strip() if payload.description else None,
-        short_description=payload.short_description.strip() if payload.short_description else None,
-        implementation_description=payload.implementation_description.strip() if payload.implementation_description else None,
-        definition_of_done=payload.definition_of_done.strip() if payload.definition_of_done else None,
+        title=payload.title,
+        description=payload.description,
+        short_description=payload.short_description,
+        implementation_description=payload.implementation_description,
+        definition_of_done=payload.definition_of_done,
         status=TASK_STATUS_TO_CODE[payload.status],
         priority=TASK_PRIORITY_TO_CODE[payload.priority],
         assigned_agent_id=payload.assigned_agent_id,
@@ -65,7 +56,7 @@ def create_task(db: Session, payload: TaskCreate) -> TaskRead:
         parent_task_id=payload.parent_task_id,
         queue_position=payload.queue_position,
     )
-    created_task = repository.create(task=task, label_names=normalized_labels)
+    created_task = repository.create(task=task, label_names=payload.labels)
     return serialize_task(created_task)
 
 
@@ -75,26 +66,20 @@ def update_task(db: Session, task_id: int, payload: TaskUpdate) -> TaskRead:
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    if payload.status not in TASK_STATUS_TO_CODE:
-        raise HTTPException(status_code=400, detail=f"Unknown task status: {payload.status}")
-    if payload.priority not in TASK_PRIORITY_TO_CODE:
-        raise HTTPException(status_code=400, detail=f"Unknown task priority: {payload.priority}")
-
-    owner = repository.get_or_create_owner(payload.human_owner.strip() if payload.human_owner else None)
-    normalized_labels = sorted({label.strip() for label in payload.labels if label.strip()})
+    owner = repository.get_or_create_owner(payload.human_owner)
 
     updated_task = repository.update(
         task=task,
-        title=payload.title.strip(),
-        description=payload.description.strip() if payload.description else None,
-        short_description=payload.short_description.strip() if payload.short_description else None,
-        implementation_description=payload.implementation_description.strip() if payload.implementation_description else None,
-        definition_of_done=payload.definition_of_done.strip() if payload.definition_of_done else None,
+        title=payload.title,
+        description=payload.description,
+        short_description=payload.short_description,
+        implementation_description=payload.implementation_description,
+        definition_of_done=payload.definition_of_done,
         status=TASK_STATUS_TO_CODE[payload.status],
         priority=TASK_PRIORITY_TO_CODE[payload.priority],
         assigned_agent_id=payload.assigned_agent_id,
         owner_id=owner.id if owner else None,
-        label_names=normalized_labels,
+        label_names=payload.labels,
         story_id=payload.story_id,
         parent_task_id=payload.parent_task_id,
         queue_position=payload.queue_position,

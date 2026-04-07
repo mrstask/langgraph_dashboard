@@ -17,19 +17,15 @@ def list_agents(db: Session) -> list[AgentRead]:
 def create_agent(db: Session, payload: AgentCreate) -> AgentRead:
     repository = AgentRepository(db)
 
-    name = payload.name.strip()
-    if not name:
-        raise HTTPException(status_code=400, detail="Agent name is required")
-
-    slug = build_unique_slug(repository, payload.slug or name)
+    slug = build_unique_slug(repository, payload.slug or payload.name)
     capabilities = sorted({item.strip() for item in payload.capabilities if item.strip()})
 
     agent = Agent(
-        name=name,
+        name=payload.name,
         slug=slug,
-        description=payload.description.strip() if payload.description else None,
-        status=payload.status.strip(),
-        agent_type=payload.agent_type.strip(),
+        description=payload.description,
+        status=payload.status,
+        agent_type=payload.agent_type,
         capabilities_json=json.dumps(capabilities),
         config_json=json.dumps(payload.config or {}),
     )
@@ -45,6 +41,7 @@ def serialize_agent(agent: Agent) -> AgentRead:
         status=agent.status,
         agent_type=agent.agent_type,
         capabilities=json.loads(agent.capabilities_json or "[]"),
+        config=json.loads(agent.config_json or "{}"),
         created_at=agent.created_at,
         updated_at=agent.updated_at,
     )

@@ -11,12 +11,14 @@ export type ProjectCreateFormValue = {
   key: string;
   name: string;
   description: string;
+  root_path: string;
 };
 
 export function ProjectCreateModal({ isOpen, onClose, onCreate }: ProjectCreateModalProps) {
   const [key, setKey] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [rootPath, setRootPath] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,6 +29,7 @@ export function ProjectCreateModal({ isOpen, onClose, onCreate }: ProjectCreateM
     setKey("");
     setName("");
     setDescription("");
+    setRootPath("");
     setIsSubmitting(false);
     setError(null);
   }, [isOpen]);
@@ -63,6 +66,7 @@ export function ProjectCreateModal({ isOpen, onClose, onCreate }: ProjectCreateM
                 key: key.trim().toUpperCase(),
                 name: name.trim(),
                 description: description.trim(),
+                root_path: rootPath.trim(),
               });
             } catch (submitError) {
               setError(submitError instanceof Error ? submitError.message : "Failed to create project");
@@ -94,6 +98,15 @@ export function ProjectCreateModal({ isOpen, onClose, onCreate }: ProjectCreateM
               onChange={(event) => setDescription(event.target.value)}
               placeholder="What this project contains"
               rows={4}
+            />
+          </label>
+
+          <label className="field">
+            <span>Project Root</span>
+            <input
+              value={rootPath}
+              onChange={(event) => setRootPath(event.target.value)}
+              placeholder="/home/user/projects/my-project"
             />
           </label>
 

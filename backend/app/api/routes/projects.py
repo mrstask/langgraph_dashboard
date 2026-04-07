@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
-from app.schemas.project import ProjectCreate, ProjectRead
-from app.services.project_service import create_project, list_projects
+from app.schemas.project import ProjectCreate, ProjectRead, ProjectUpdate
+from app.services.project_service import create_project, list_projects, update_project
 
 router = APIRouter()
 
@@ -16,3 +16,8 @@ def list_projects_route(db: Session = Depends(get_db)) -> list[ProjectRead]:
 @router.post("", response_model=ProjectRead)
 def create_project_route(payload: ProjectCreate, db: Session = Depends(get_db)) -> ProjectRead:
     return create_project(db=db, payload=payload)
+
+
+@router.patch("/{project_id}", response_model=ProjectRead)
+def update_project_route(project_id: int, payload: ProjectUpdate, db: Session = Depends(get_db)) -> ProjectRead:
+    return update_project(db=db, project_id=project_id, payload=payload)

@@ -48,6 +48,7 @@ export type TaskApiRecord = {
   due_date: string | null;
   story_id: number | null;
   parent_task_id: number | null;
+  queue_position: number | null;
   created_at: string;
   updated_at: string;
 };

@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
@@ -8,16 +7,9 @@ from app.models.project import Project
 from app.models.story import Story
 from app.models.task import Task
 from app.models.task_run import TaskRun
+from app.schemas.counts import CountsRead
 
 router = APIRouter()
-
-
-class CountsRead(BaseModel):
-    tasks: int
-    agents: int
-    runs: int
-    projects: int
-    stories: int
 
 
 @router.get("", response_model=CountsRead)

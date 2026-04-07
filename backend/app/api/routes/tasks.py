@@ -27,7 +27,7 @@ def move_task_route(
     payload: TaskStatusMove,
     db: Session = Depends(get_db),
 ) -> TaskRead:
-    return move_task(db=db, task_id=task_id, status=payload.status)
+    return move_task(db=db, task_id=task_id, payload=payload)
 
 
 @router.patch("/{task_id}", response_model=TaskRead)

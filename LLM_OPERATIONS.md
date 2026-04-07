@@ -14,6 +14,10 @@ Use it as the operational contract for future agentic workflows.
 - rely on backend mappings for numeric task status and priority codes
 - do not couple task changes to run changes unless a workflow explicitly requires both
 - preserve user-entered descriptions and labels unless there is a specific instruction to modify them
+- the API enforces strict `Literal` types for status, priority, agent_type, and similar fields — sending an invalid value will return a 422 validation error, not a 400 from service logic
+- string fields are auto-stripped by the API — no need to pre-trim values before sending
+- empty-string optional fields are normalized to `null` by the API
+- labels are auto-deduplicated and sorted by the API
 
 ## Domain Rules
 
@@ -22,19 +26,34 @@ Use it as the operational contract for future agentic workflows.
 - tasks belong to a project
 - tasks may be assigned to an agent or left unassigned
 - tasks have a board status and a priority
+- valid statuses: `backlog`, `ready`, `running`, `review`, `done`, `failed`, `architect`, `develop`, `testing`
+- valid priorities: `low`, `medium`, `high`, `critical`
 - owners and labels must be normalized through backend logic, not duplicated manually
+- tasks can form hierarchies via `parent_task_id` and be ordered via `queue_position`
 
 ### Agents
 
 - agents represent runtime identities, not human users
 - agent `slug` must be unique
 - `capabilities` describe what an agent can do, not what it is currently doing
-- `agent_type` should stay aligned with supported runtimes such as `mock`, `langchain`, or `langgraph`
+- valid `agent_type` values: `mock`, `langchain`, `langgraph`, `custom`
+- valid `status` values: `online`, `offline`, `busy`, `error`
 
 ### Projects
 
 - projects are top-level containers
-- project `key` must be unique and uppercase
+- project `key` must be unique, uppercase, and match `^[A-Z][A-Z0-9_]*$`
+
+### Stories
+
+- stories group related tasks
+- tasks link to stories via `story_id`
+
+### Runs
+
+- runs represent execution attempts, separate from task lifecycle
+- valid `status` values: `queued`, `running`, `completed`, `failed`, `cancelled`
+- valid `pipeline_type` values: `mock`, `dev_team`, `langchain`, `langgraph`
 
 ## Create Rules
 
@@ -42,23 +61,25 @@ Use it as the operational contract for future agentic workflows.
 
 Required:
 
-- `project_id`
-- `title`
-- `status`
-- `priority`
+- `project_id` (must be > 0)
+- `title` (1–255 chars, auto-stripped)
+- `status` (must be a valid `TaskStatusName`)
+- `priority` (must be a valid `TaskPriorityName`)
 
 Optional:
 
-- `description`
-- `assigned_agent_id`
-- `human_owner`
-- `labels`
+- `description`, `short_description`, `implementation_description`, `definition_of_done` (auto-stripped, empty becomes `null`)
+- `assigned_agent_id` (must be > 0 if set)
+- `human_owner` (auto-stripped, empty becomes `null`)
+- `labels` (auto-deduplicated, sorted, stripped)
 - `due_date`
+- `story_id`, `parent_task_id` (must be > 0 if set)
+- `queue_position` (must be >= 0 if set)
 
 Behavior:
 
 - use existing project ids and agent ids only
-- normalize labels by trimming whitespace and removing duplicates
+- labels are normalized automatically by the API
 - choose a default status of `backlog` unless the user explicitly requests another lane
 - choose a default priority of `medium` unless urgency is clear
 
@@ -66,21 +87,21 @@ Behavior:
 
 Required:
 
-- `name`
+- `name` (1–255 chars, auto-stripped)
 
 Optional:
 
-- `slug`
-- `description`
-- `status`
-- `agent_type`
-- `capabilities`
-- `config`
+- `slug` (auto-stripped, must be lowercase alphanumeric with hyphens if provided)
+- `description` (auto-stripped, empty becomes `null`)
+- `status` (must be a valid `AgentStatus`, default `online`)
+- `agent_type` (must be a valid `AgentType`, default `mock`)
+- `capabilities` (list of strings)
+- `config` (typed as `dict[str, Any]`)
 
 Behavior:
 
 - if `slug` is omitted, derive it from the name
-- if a slug collision exists, the backend should suffix it
+- if a slug collision exists, the backend will auto-suffix it
 - default `status` to `online`
 - default `agent_type` to `mock` unless a real runtime is configured
 
@@ -88,16 +109,17 @@ Behavior:
 
 Required:
 
-- `key`
-- `name`
+- `key` (1–32 chars, must match `^[A-Z][A-Z0-9_]*$`, auto-uppercased)
+- `name` (1–255 chars, auto-stripped)
 
 Optional:
 
-- `description`
+- `description` (auto-stripped, empty becomes `null`)
+- `root_path` (auto-stripped, empty becomes `null`)
 
 Behavior:
 
-- uppercase the project key
+- the API auto-uppercases the project key
 - reject duplicates instead of silently mutating keys
 
 ## Update Rules
@@ -108,6 +130,8 @@ When changing a task:
 
 - preserve existing fields that were not explicitly changed
 - change only the intended status, priority, assignment, labels, owner, or description
+- all string fields are auto-stripped; empty optional fields become `null`
+- labels are auto-deduplicated and sorted
 - status changes should follow board semantics:
   - `backlog` for not yet prepared work
   - `ready` for work that can be picked up
@@ -115,6 +139,9 @@ When changing a task:
   - `review` for waiting on human review
   - `done` for completed accepted work
   - `failed` for blocked or failed execution
+  - `architect` for design/planning phase
+  - `develop` for active development
+  - `testing` for test/QA phase
 
 ### Update Agent
 

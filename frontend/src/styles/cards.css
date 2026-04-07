@@ -87,6 +87,11 @@
 .detail-list { display: grid; gap: 14px; }
 .detail-list span { display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em; }
 .detail-list strong { font-size: 1rem; }
+.detail-mono { font-family: monospace; font-size: 0.88rem; word-break: break-all; }
+
+.info-panel-actions { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+
+.secondary-button--small { padding: 6px 14px; font-size: 0.82rem; }
 
 /* chips */
 .action-chip { display: inline-flex; padding: 3px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }

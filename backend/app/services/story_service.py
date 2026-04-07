@@ -24,8 +24,8 @@ def list_stories(db: Session) -> list[StoryRead]:
 def create_story(db: Session, payload: StoryCreate) -> StoryRead:
     repo = StoryRepository(db)
     story = Story(
-        title=payload.title.strip(),
-        description=payload.description.strip() if payload.description else None,
+        title=payload.title,
+        description=payload.description,
     )
     return serialize_story(repo.create(story))
 
@@ -37,8 +37,8 @@ def update_story(db: Session, story_id: int, payload: StoryUpdate) -> StoryRead:
         raise HTTPException(status_code=404, detail="Story not found")
     updated = repo.update(
         story=story,
-        title=payload.title.strip(),
-        description=payload.description.strip() if payload.description else None,
+        title=payload.title,
+        description=payload.description,
     )
     return serialize_story(updated)
 

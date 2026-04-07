@@ -61,4 +61,6 @@ def serialize_run(run: TaskRun) -> RunRead:
         output_payload=json.loads(run.output_payload_json or "{}"),
         error_message=run.error_message,
         logs_text=run.logs_text,
+        created_at=run.created_at,
+        updated_at=run.updated_at,
     )

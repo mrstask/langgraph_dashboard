@@ -31,6 +31,8 @@ export type TaskCreateFormValue = {
   labels: string[];
   due_date: string | null;
   story_id: number | null;
+  parent_task_id: number | null;
+  queue_position: number | null;
 };
 
 type FormState = {
@@ -156,6 +158,8 @@ export function TaskCreateModal({
                 labels: form.labels.split(",").map((l) => l.trim()).filter(Boolean),
                 due_date: form.dueDate || null,
                 story_id: form.storyId ? Number(form.storyId) : null,
+                parent_task_id: null,
+                queue_position: null,
               });
             } catch (submitError) {
               set("error", submitError instanceof Error ? submitError.message : "Failed to create task");

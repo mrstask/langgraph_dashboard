@@ -11,3 +11,4 @@ class Project(TimestampMixin, Base):
     key = Column(String(32), unique=True, index=True, nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text(), nullable=True)
+    root_path = Column(Text(), nullable=True)
