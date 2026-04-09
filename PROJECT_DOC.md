@@ -198,6 +198,7 @@ Task priorities are stored numerically in the database and mapped in `backend/ap
 ### Tasks
 
 - `GET /api/tasks`
+- `GET /api/tasks/{task_id}`
 - `POST /api/tasks`
 - `POST /api/tasks/{task_id}/move`
 - `PATCH /api/tasks/{task_id}`

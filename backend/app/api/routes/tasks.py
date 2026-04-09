@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.schemas.task import TaskCreate, TaskRead, TaskStatusMove, TaskUpdate
-from app.services.task_service import create_task, delete_task, list_tasks, move_task, update_task
+from app.services.task_service import create_task, delete_task, get_task, list_tasks, move_task, update_task
 
 router = APIRouter()
 
@@ -11,6 +11,11 @@ router = APIRouter()
 @router.get("", response_model=list[TaskRead])
 def get_tasks(db: Session = Depends(get_db)) -> list[TaskRead]:
     return list_tasks(db)
+
+
+@router.get("/{task_id}", response_model=TaskRead)
+def get_task_route(task_id: int, db: Session = Depends(get_db)) -> TaskRead:
+    return get_task(db=db, task_id=task_id)
 
 
 @router.post("", response_model=TaskRead)

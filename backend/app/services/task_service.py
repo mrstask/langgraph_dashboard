@@ -12,6 +12,14 @@ from app.repositories.task_repository import TaskRepository
 from app.schemas.task import TaskCreate, TaskRead, TaskStatusMove, TaskUpdate
 
 
+def get_task(db: Session, task_id: int) -> TaskRead:
+    repository = TaskRepository(db)
+    task = repository.get_by_id(task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return serialize_task(task)
+
+
 def delete_task(db: Session, task_id: int) -> None:
     repository = TaskRepository(db)
     task = repository.get_by_id(task_id)
